@@ -1,0 +1,12 @@
+{
+  "name": "handoff",
+  "owner": { "name": "Howar31", "url": "https://github.com/howar31" },
+  "metadata": { "description": "Self-hosted single-plugin marketplace for handoff" },
+  "plugins": [
+    {
+      "name": "handoff",
+      "source": "./",
+      "description": "Save and load LLM-facing session handoff documents so a fresh agent can resume work cold — decisions, state, dead ends, constraints, next steps"
+    }
+  ]
+}

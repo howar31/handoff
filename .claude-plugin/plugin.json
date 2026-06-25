@@ -1,0 +1,18 @@
+{
+  "name": "handoff",
+  "version": "0.1.0",
+  "description": "Save and load LLM-facing session handoff documents so a fresh agent can resume work cold — decisions, state, dead ends, constraints, next steps",
+  "author": { "name": "howar31", "url": "https://github.com/howar31" },
+  "homepage": "https://github.com/howar31/handoff",
+  "repository": "https://github.com/howar31/handoff.git",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "handoff",
+    "session-handoff",
+    "context-handoff",
+    "resume-session",
+    "agent-context"
+  ]
+}
