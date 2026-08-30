@@ -4,7 +4,7 @@
 [![Built for Claude Code](https://img.shields.io/badge/built%20for-Claude%20Code-D77655?style=flat-square)](https://claude.com/claude-code)
 [![Last Commit](https://img.shields.io/github/last-commit/howar31/handoff?style=flat-square)](https://github.com/howar31/handoff/commits/main)
 [![Stars](https://img.shields.io/github/stars/howar31/handoff?style=flat-square)](https://github.com/howar31/handoff/stargazers)
-[![Sponsor on Ko-fi](https://img.shields.io/badge/sponsor-Ko--fi-FF5E5B?style=flat-square&logo=ko-fi&logoColor=white)](https://ko-fi.com/howar31)
+[![Sponsor](https://img.shields.io/badge/Sponsor-donate.howar31.com-b4532c?style=flat-square&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTIwLjg0IDQuNjFhNS41IDUuNSAwIDAgMC03Ljc4IDBMMTIgNS42N2wtMS4wNi0xLjA2YTUuNSA1LjUgMCAwIDAtNy43OCA3Ljc4bDEuMDYgMS4wNkwxMiAyMS4yM2w3Ljc4LTcuNzggMS4wNi0xLjA2YTUuNSA1LjUgMCAwIDAgMC03Ljc4eiIvPjwvc3ZnPg==)](https://donate.howar31.com/)
 
 A [Claude Code](https://claude.com/claude-code) skill that **saves a session as a handoff document** and **loads one back** so a fresh agent — even a different model, starting cold in an empty context window — can pick up exactly where the last one stopped.
 
