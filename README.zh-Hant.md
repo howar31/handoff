@@ -105,6 +105,8 @@ cd handoff && ./setup.sh
 ./setup.sh --force     # 取代 skill 路徑上既有的實體目錄（先備份）
 ```
 
+更新時在 clone 目錄執行 `git pull` 即可：已安裝的 skill 是 symlink，Claude Code 會直接讀到新檔案。只有 symlink 不見或指向別處時，才需要重跑 `setup.sh`。
+
 ### 4. 開始使用
 
 Skill 會動態載入；如果 `/handoff` 沒有立即出現，在進行中的 session 執行 `/reload-plugins`。不需要重新啟動。
@@ -145,7 +147,7 @@ npx skills update handoff -g          # 之後更新
 | | `setup.sh`（symlink） | npx skills | plugin manager |
 |---|---|---|---|
 | Slash 名稱 | `/handoff`（最短） | `/handoff` | `/handoff:handoff` |
-| 安裝 / 更新 | clone + 重跑 `setup.sh` | `npx skills add` / `update` | `claude plugin install` / `update` |
+| 安裝 / 更新 | clone + 執行 `setup.sh`；更新用 `git pull` | `npx skills add` / `update` | `claude plugin install` / `update` |
 | 可被搜尋到 | 否 | 否 | 是（透過 marketplace） |
 
 只用一種方式安裝：`setup.sh` 與 `npx skills` 都寫入 `~/.claude/skills/handoff`，plugin manager 則會讓同一個 skill 多一個名稱。

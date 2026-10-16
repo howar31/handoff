@@ -105,6 +105,8 @@ The installer symlinks `skills/handoff` into `~/.claude/skills/`, so the skill i
 ./setup.sh --force     # replace an existing real directory at the skill path (backed up first)
 ```
 
+To update, run `git pull` in the clone: the installed skill is a symlink, so Claude Code reads the new files directly. Re-run `setup.sh` only when the link is missing or points elsewhere.
+
 ### 4. Use it
 
 Skills are picked up dynamically; run `/reload-plugins` in an active session if `/handoff` does not appear immediately. No restart is required.
@@ -145,7 +147,7 @@ Pass `-a claude-code`: without it the CLI offers every agent it detects, and the
 | | `setup.sh` (symlink) | npx skills | plugin manager |
 |---|---|---|---|
 | Slash name | `/handoff` (shortest) | `/handoff` | `/handoff:handoff` |
-| Install / update | clone + re-run `setup.sh` | `npx skills add` / `update` | `claude plugin install` / `update` |
+| Install / update | clone + `setup.sh`; update with `git pull` | `npx skills add` / `update` | `claude plugin install` / `update` |
 | Discoverable | no | no | yes (via marketplace) |
 
 Install only one method: `setup.sh` and `npx skills` both write `~/.claude/skills/handoff`, and the plugin manager exposes the same skill under a second name.
