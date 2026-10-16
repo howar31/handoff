@@ -124,7 +124,7 @@ claude plugin marketplace add howar31/handoff
 claude plugin install handoff@handoff
 ```
 
-**Central marketplace** (all of howar31's plugins; register once, future plugins appear automatically):
+**Central marketplace** (all of howar31's plugins; register once, then install any of them by name):
 
 ```bash
 claude plugin marketplace add howar31/howar31-marketplace

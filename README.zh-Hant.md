@@ -124,7 +124,7 @@ claude plugin marketplace add howar31/handoff
 claude plugin install handoff@handoff
 ```
 
-**中央 marketplace**（howar31 的所有 plugin；註冊一次，之後的新 plugin 會自動出現）：
+**中央 marketplace**（howar31 的所有 plugin；註冊一次，之後就能直接用名稱安裝其中任何一個）：
 
 ```bash
 claude plugin marketplace add howar31/howar31-marketplace
