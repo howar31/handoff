@@ -5,6 +5,7 @@ description: >-
 when_to_use: >-
   SAVE: the user types `/handoff` (without `load`) or asks "做交接", "session 交接", "交接這個 session", "建立交接文件", "把 context 存起來", "create a handoff", "save context for handoff", "save session for next agent"; optional free-text focus or a `topic: slug` prefix. LOAD: the user types `/handoff load` or asks "接續交接", "讀取交接文件", "上次做到哪", "之前的進度", "之前的工作", "load handoff", "continue from previous session", "resume the previous session"; optional filename / substring filter. Ask the user when the intent is ambiguous.
 argument-hint: "[load [filter]] | [topic: slug] [focus]"
+compatibility: Designed for Claude Code. In other agents SAVE and LOAD work in self-contained mode, without memory-based lean mode or source-session lookup.
 ---
 
 # /handoff — Session Handoff Skill
@@ -205,7 +206,7 @@ Apply the focus guidance from the arguments (if any) to weight emphasis: e.g. if
 
 ## Step 4: Generate the handoff document
 
-Read `${CLAUDE_SKILL_DIR}/template.md` and produce the document exactly as it specifies: all 15 sections §0 to §14 in order, §0 PROTOCOL embedded verbatim, empty sections kept with `(none)`, the lean-mode compression rules, and the LLM-facing format rules at its end.
+Read `template.md` from this skill's directory (`${CLAUDE_SKILL_DIR}/template.md`; where that placeholder is not expanded, it is the directory containing this SKILL.md) and produce the document exactly as it specifies: all 15 sections §0 to §14 in order, §0 PROTOCOL embedded verbatim, empty sections kept with `(none)`, the lean-mode compression rules, and the LLM-facing format rules at its end.
 
 ---
 

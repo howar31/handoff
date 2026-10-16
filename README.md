@@ -43,7 +43,7 @@ If your profile is available, either in Claude Code's context (for example impor
 
 ## Install
 
-The skill is **model-invoked** — once installed, Claude triggers it from the `description`; the slash name below only matters when you invoke it by hand. Two ways to install. **Use one, not both** — installing via both exposes the same skill under two names.
+The skill is **model-invoked**: once installed, Claude triggers it from the `description`; the slash name below only matters when you invoke it by hand. Three ways to install. **Use only one**: `setup.sh` and `npx skills` both write `~/.claude/skills/handoff`, and the plugin manager exposes the same skill under a second name.
 
 ### setup.sh — symlink (recommended; shortest slash name)
 
@@ -73,13 +73,24 @@ claude plugin marketplace add howar31/howar31-marketplace
 claude plugin install handoff@howar31
 ```
 
+### npx skills
+
+Installs the skill with the cross-agent [`npx skills`](https://github.com/vercel-labs/skills) CLI, invoked as **`/handoff`**:
+
+```bash
+npx skills add howar31/handoff -g -a claude-code
+npx skills update handoff -g          # update later
+```
+
+Pass `-a claude-code`: without it the CLI offers every agent it detects, and the skill does not limit where it can be installed. It is written for Claude Code. In other agents, saving and loading are expected to work in self-contained mode only: project memory (lean mode) and the source-session lookup rely on Claude Code, and this has not been tested in other agents.
+
 ### Which method?
 
-| | setup.sh (symlink) | plugin manager |
-|---|---|---|
-| Slash name | `/handoff` (shortest) | `/handoff:handoff` |
-| Install / update | clone + re-run `setup.sh` | `claude plugin install` / `update` |
-| Discoverable via marketplace | no | yes |
+| | setup.sh (symlink) | npx skills | plugin manager |
+|---|---|---|---|
+| Slash name | `/handoff` (shortest) | `/handoff` | `/handoff:handoff` |
+| Install / update | clone + re-run `setup.sh` | `npx skills add` / `update` | `claude plugin install` / `update` |
+| Discoverable via marketplace | no | no | yes |
 
 Either way, skills are picked up dynamically — run `/reload-plugins` in an active session if `handoff` does not appear immediately.
 
@@ -101,6 +112,9 @@ Natural language works too — "做交接" / "save context for handoff" to save,
 ```bash
 # setup.sh install (the replaced real dir, if any, is in ~/.claude/skills/.bak/<timestamp>/)
 rm ~/.claude/skills/handoff
+
+# npx skills install
+npx skills remove handoff -g
 
 # Plugin install
 claude plugin uninstall handoff@handoff   # or handoff@howar31

@@ -19,4 +19,4 @@ Public Claude Code plugin: one model-invoked skill, `handoff`, that saves a sess
 - Conventional Commits. MIT licensed.
 
 ## Install
-Recommended — `./setup.sh` (symlink → `/handoff`). Alternative — `claude plugin marketplace add howar31/handoff && claude plugin install handoff@handoff` (→ `/handoff:handoff`).
+Recommended — `./setup.sh` (symlink → `/handoff`). Alternatives — `npx skills add howar31/handoff -g -a claude-code` (→ `/handoff`, same path as setup.sh), or `claude plugin marketplace add howar31/handoff && claude plugin install handoff@handoff` (→ `/handoff:handoff`). Use only one.
