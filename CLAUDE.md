@@ -8,7 +8,7 @@ Public Claude Code plugin: one model-invoked skill, `handoff`, that saves a sess
 - `.claude-plugin/plugin.json` — plugin manifest.
 - `.claude-plugin/marketplace.json` — self-marketplace (`source: "./"`) so the repo is directly installable.
 - `setup.sh` — symlink installer (recommended path): links the skill into `~/.claude/skills/` for the short `/handoff` name, repo stays source of truth. Idempotent; `--dry-run` / `--force`. The plugin manager is the alternative (namespaced `/handoff:handoff`, discoverable). Use one, not both.
-- `README.md` — human-facing overview + install / uninstall.
+- `README.md` — human-facing overview + install / uninstall (English). `README.zh-Hant.md` is its Traditional Chinese (正體中文) counterpart with the same sections; each links the other in a switcher line under the badges. Change both together; no em dashes in either.
 
 ## Conventions
 - The skill is model-invocable: triggering lives entirely in the SKILL.md `description` + `when_to_use` (no `disable-model-invocation` / `user-invocable` gating). Keep `description` + `when_to_use` ≤ 1536 chars or the skill listing truncates (currently ~1030); no `<` / `>` in them.

@@ -30,10 +30,12 @@ A public Claude Code plugin that ships one model-invoked skill, `handoff`. The s
 │       ├── SKILL.md         # the skill: SAVE/LOAD procedure, project resolution, privacy scan
 │       └── template.md      # handoff document spec: §0 PROTOCOL text, §1–§14, format rules
 ├── setup.sh                 # idempotent symlink installer (--dry-run / --force)
-├── README.md                # human-facing overview + install/uninstall
+├── README.md                # human-facing overview + install/uninstall (English)
+├── README.zh-Hant.md        # same content in Traditional Chinese (正體中文)
 ├── CLAUDE.md                # repo guide for agents working in this repo
 ├── SPEC.md                  # this file
 ├── LICENSE                  # MIT
+├── .gitattributes           # LF line endings for text, shell, Markdown, JSON
 └── .gitignore
 ```
 
@@ -44,6 +46,8 @@ A public Claude Code plugin that ships one model-invoked skill, `handoff`. The s
 - **User profile hints are optional.** The user profile (already in context, e.g. imported by the user's CLAUDE.md, else `~/.claude/USER.md` if present) may supply a common project root and container directories, a timezone, and organization names for the privacy scan. Each hint applies only when the profile states it; otherwise the default (git remote, system time zone, session content) is used. The profile is not a Claude Code built-in; nothing breaks without it.
 - **Procedure / template split.** `SKILL.md` holds the procedure; `template.md` holds the document spec. Keeps `SKILL.md` under the 500-line guideline in the Claude Code skills docs.
 - **Tool-neutral questions.** Every "ask" / "confirm" (mode, project name, candidate pick, privacy choice, post-pickup deletion) is phrased generically; the agent picks a plain question or a structured question tool. No step names a specific tool.
+- **Bilingual README.** `README.md` (English) and `README.zh-Hant.md` (Traditional Chinese, 正體中文) carry the same sections and link each other in a switcher line under the badges; they change together. Neither uses em dashes.
+- Line endings are LF for all text files (`.gitattributes`).
 - Conventional Commits; MIT license.
 
 ## Verification
