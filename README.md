@@ -23,6 +23,12 @@ The skill is **model-invoked** — once installed, Claude can trigger it from th
 
 A 15-section document built for machine extraction, not human reading: `§0 PROTOCOL` (read-this-first instructions for the receiving agent), `§1 METADATA`, `§2 ORIENTATION`, `§3 MISSION`, `§4 STATE`, `§5 PRIORITIES`, `§6 DECISIONS`, `§7 CONSTRAINTS`, `§8 DEAD ENDS`, `§9 OPEN QUESTIONS`, `§10 VERIFICATION`, `§11 LOCATIONS`, `§12 QUICK COMMANDS`, `§13 POINTERS`, `§14 NEXT ACTIONS`. Empty sections are kept with a `(none)` body so the next agent knows a topic was considered, not forgotten.
 
+### Source session and pickup checks
+
+The handoff records the ID and transcript path of the session that wrote it. When the document leaves something unclear, the receiving agent looks it up in that transcript, or reopens the session with `claude --resume <id>`, until Claude Code's transcript retention period removes it. If the session was compacted before saving, the save step reads the earlier messages back from the transcript first.
+
+On load, before its first message, the receiving agent compares the current git branch, HEAD, upstream and working tree with the recorded state, and reports any drift. Files that lived only in the session's temporary scratch space are copied next to the handoff, and background tasks that end with the session are listed so they can be restarted.
+
 ### Privacy by design
 
 Handoffs often *need* sensitive context (project names, hostnames) to be useful, so the save step **warns rather than blocks**: it lists detected sensitive strings, lets you keep / redact / abort, and records what was kept. On load, after you confirm pickup, the receiving agent is prompted to **delete the file** — bounding how long any private context lives on disk. Handoff files live under your `~/.claude/cache/` and are never part of this repo.
@@ -30,6 +36,10 @@ Handoffs often *need* sensitive context (project names, hostnames) to be useful,
 ### Pairs with project memory
 
 The skill routes knowledge to one home to avoid drift: durable project knowledge stays in Claude Code's auto-loaded memory, transient resume-state goes in the handoff. When a project already has a memory store, save runs in **lean** mode — recording only transient state plus pointers to the canonical memory entries instead of duplicating them.
+
+### Optional user profile
+
+If your profile is available, either in Claude Code's context (for example imported by your `CLAUDE.md`) or as `~/.claude/USER.md`, save uses what it states: a common project root and container directories for project naming, a timezone for timestamps, and organization names for the privacy scan. Without a profile, save uses the git remote name, the system time zone and what appears in the session.
 
 ## Install
 
