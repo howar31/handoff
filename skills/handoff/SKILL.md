@@ -18,7 +18,7 @@ Documents live at `~/.claude/cache/handoff/{project}-{topic}-{timestamp}.md` (a 
 
 **This session's ID**: `${CLAUDE_SESSION_ID}` (if this still reads as a literal placeholder or is empty, the session ID is unknown).
 
-**Asking the user**: whenever this skill says to ask or confirm, ask in whatever way fits the environment: a plain question in the conversation, or a structured question tool if one is available and suits the choice. Then wait for the reply.
+**Asking the user**: whenever this skill says to ask or confirm, wait for the reply before continuing. Asks marked **choice question** have a short, fixed set of answers. If you have the `AskUserQuestion` tool (Claude Code), use it for every choice question instead of a plain-text question: it takes 2 to 4 options and adds a free-text "Other" answer by itself, so put the recommended option first and let "Other" carry custom input. Without that tool, ask in plain conversation and list the same options. Unmarked asks are open-ended: ask them in plain conversation.
 
 **User profile hints**: the user's profile may already be in your context (e.g. imported by their CLAUDE.md); otherwise read `~/.claude/USER.md` if it exists. Use only what it actually states; where it states nothing relevant (or there is no profile), skip the hint and use the default. This skill uses: a common project root and its container directories (Rule P2), a timezone (Step 6 and every timestamp), organization / employer names (Step 5 privacy scan), and the §2 ORIENTATION fields.
 
@@ -104,11 +104,11 @@ No profile, no stated root, or `pwd` outside it: fall through to Rule P3.
 
 #### Rule P4: Ask the user (SAVE only)
 
-Ask the user to choose the project name, offering:
+Ask the user to choose the project name (choice question), offering:
 
-- Each meaningful pwd segment from Rule P3 (annotate with "(matches existing handoff)" if `cache/handoff/` has any `{segment}-*.md`).
+- Up to three meaningful pwd segments from Rule P3, innermost first (annotate with "(matches existing handoff)" if `cache/handoff/` has any `{segment}-*.md`).
 - `general` (default bucket).
-- A custom name of their choosing.
+- A custom name of their choosing (the free-text answer).
 
 Do not proceed until a project name is chosen. LOAD mode never asks here; it falls back to path matching (Load Step 1).
 
@@ -124,7 +124,7 @@ Inspect the arguments and the triggering input to decide between SAVE and LOAD m
 | Triggering natural-language phrase matches the LOAD trigger list | LOAD |
 | Bare `/handoff` with no load keyword AND no LOAD-list phrase | SAVE |
 | Triggering phrase matches the SAVE trigger list | SAVE |
-| Truly ambiguous (e.g. user said only "handoff", "處理交接") | Ask the user before proceeding |
+| Truly ambiguous (e.g. user said only "handoff", "處理交接") | Ask the user: SAVE or LOAD (choice question) |
 
 After determining mode:
 - **SAVE** → proceed to **Save Mode** section below.
@@ -225,7 +225,7 @@ Sources of candidates:
 
 Scan the files that will be copied into `assets_dir` (Step 8) as well as the document.
 
-**If candidates found**: present the list to the user as a warning and ask them to choose:
+**If candidates found**: present the list to the user as a warning and ask them to choose (choice question: `continue` recommended, `redact`, `abort`; after `redact`, ask which items):
 
 > "Privacy scan detected potentially sensitive strings in the handoff:
 > - `<item>` (N occurrences)
@@ -327,8 +327,8 @@ For each candidate show: filename, mtime, topic slug, and a §1 METADATA preview
 | Candidate count | Action |
 |---|---|
 | 0 | Tell the user there is no handoff matching `<project>`. Offer the cross-project fallback (Step 3). |
-| 1 | Show the candidate and ask the user to confirm loading it. **Never auto-pick, even when N=1.** |
-| ≥2 | List the candidates (numbered, newest first) and ask the user which one to load. Offer the cross-project fallback as an extra choice. |
+| 1 | Show the candidate and ask the user to confirm loading it (choice question: load it, or list across projects). **Never auto-pick, even when N=1.** |
+| ≥2 | List all candidates (numbered, newest first) in the conversation, then ask which one to load (choice question: the newest candidates plus the cross-project fallback as options; any other number goes in the free-text answer). |
 
 **Confidence rule**: if a user-supplied filter substring-matches multiple candidates, or you are otherwise unsure which file the user means, do not guess; ask.
 
@@ -340,7 +340,7 @@ When invoked (zero matches, OR user explicitly chose to list across projects in 
 ls -t ~/.claude/cache/handoff/*.md 2>/dev/null | head -n 10
 ```
 
-List the top 10 (project segment, topic, mtime, filename) and ask the user to pick one or give a custom filename / path.
+List the top 10 (numbered; project segment, topic, mtime, filename) in the conversation, then ask the user to pick one (choice question: the newest ones as options; any other number or a custom filename / path goes in the free-text answer).
 
 ## Step 4: Read the chosen file and follow §0 PROTOCOL
 

@@ -43,6 +43,8 @@ You are an AI agent receiving a session handoff. Before taking any action:
    handoff file (§1 METADATA `file_path`) and its `assets_dir`, if that is not
    "none". If §1 METADATA `sensitive_items` is non-empty, recommend deleting and
    mention the sensitive items count so the user understands the leakage motivation.
+   If you have the `AskUserQuestion` tool, ask with it (options: delete, keep);
+   otherwise ask in plain text.
 ```
 
 ## §1 METADATA — YAML frontmatter or fenced block

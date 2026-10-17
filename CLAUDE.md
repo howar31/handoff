@@ -12,7 +12,7 @@ Public Claude Code plugin: one model-invoked skill, `handoff`, that saves a sess
 
 ## Conventions
 - The skill is model-invocable: triggering lives entirely in the SKILL.md `description` + `when_to_use` (no `disable-model-invocation` / `user-invocable` gating). Keep `description` + `when_to_use` ≤ 1536 chars or the skill listing truncates (currently ~1030); no `<` / `>` in them.
-- Questions to the user are tool-neutral: write "ask the user", never name a question tool.
+- Questions to the user: asks with a short, fixed set of answers are marked "(choice question)"; the "Asking the user" paragraph in SKILL.md (and §0 step 9 in template.md) is the only place that names `AskUserQuestion`, always conditional ("if you have it"), with a plain-text fallback for other agents. Open-ended asks stay plain "ask the user".
 - `$ARGUMENTS` appears exactly once in SKILL.md; never write `$<digit>` or a whitespace-preceded `` !` `` (both are harness substitution syntax).
 - Skill content stays portable and public: no machine-specific paths (use `~/.claude/...`, never a hardcoded home), no personal / employer / locale data in examples, no references to private config files beyond the conventional `~/.claude/USER.md` (read only if present).
 - Handoff documents themselves are written to `~/.claude/cache/handoff/` at runtime — they are NOT part of this repo and may contain user-private context.

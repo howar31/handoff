@@ -1,6 +1,6 @@
 {
   "name": "handoff",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Save and load LLM-facing session handoff documents so a fresh agent can resume work cold — decisions, state, dead ends, constraints, next steps",
   "author": { "name": "howar31", "url": "https://github.com/howar31" },
   "homepage": "https://github.com/howar31/handoff",
