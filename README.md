@@ -22,18 +22,33 @@ Gathers the session's mission, current state, decisions (with rationale and reje
 /handoff                    → infer topic and focus from the session
 /handoff <focus>            → weight the document toward the focus
 /handoff topic: <slug>      → set the topic slug explicitly
+/handoff to <session>       → also send it to that running session
+/handoff new                → also send it to the session you just opened for this project
 ```
 
 ### Load: `/handoff load`
 
-Finds the handoffs for the current project (by project name, and by the directory each handoff recorded), shows them, and asks which one to load. It never picks one on its own, even when there is only one. After reading the file, the receiving agent follows the protocol embedded in the document's own §0.
+Finds the handoffs for the current project (by project name, and by the directory each handoff recorded), shows them, and asks which one to load. It never picks one on its own, even when there is only one. Given a file path, it loads that file directly. After reading the file, the receiving agent follows the protocol embedded in the document's own §0.
 
 ```text
 /handoff load               → pick from this project's handoffs
 /handoff load <filter>      → narrow the candidates by filename substring
+/handoff load <path>        → load that file
 ```
 
-Both modes are model-invocable: natural-language requests such as "create a handoff" / 「做交接」 or "load handoff" / 「接續交接」 trigger them too.
+Both modes are model-invocable: natural-language requests such as "create a handoff" / 「做交接」, "hand off to the new session" / 「交給新 session」 or "load handoff" / 「接續交接」 trigger them too.
+
+### Hand over to a running session
+
+In Claude Code, sessions on the same machine can message each other. Open a new session for the work, then run `/handoff new` (or `/handoff to <session>`) in the old one. After writing the file, the old session:
+
+1. Picks the receiver: the named session, or for `new` the one idle session of this project that started after the old one. It asks you only when there are several candidates or none.
+2. Sends it a message that points to the file. The receiver loads it and, before asking you anything, replies with one `PICKUP` line: the top priority in its own words, the language it will use with you, and any drift.
+3. Checks that line against the file and answers `MATCH` or the correct values, then tells you the receiver is waiting for your confirmation. If the receiver goes idle without replying, it tells you to check that session.
+4. Answers the receiver's questions from its own context until you confirm in the receiver, which then sends `CONFIRMED`.
+5. Tells the sessions it worked with to address the receiver from now on, stops its own watchers and sends the receiver their last-seen positions, and reports that it can be closed.
+
+Without `to` or `new`, or in an agent without cross-session messaging, `/handoff` only writes the file and you load it yourself.
 
 ### What's in a handoff
 
@@ -43,11 +58,15 @@ A 15-section document built for machine extraction, not human reading: `§0 PROT
 
 The handoff records the ID and transcript path of the session that wrote it. When the document leaves something unclear, the receiving agent looks it up in that transcript, or reopens the session with `claude --resume <id>`, until Claude Code's transcript retention period removes it. If the session was compacted before saving, the save step reads the earlier messages back from the transcript first.
 
-On load, before its first message, the receiving agent compares the current git branch, HEAD, upstream and working tree with the recorded state, and reports any drift. Files that lived only in the session's temporary scratch space are copied next to the handoff, and background tasks that end with the session are listed so they can be restarted.
+On load, before its first message, the receiving agent compares the current git branch, HEAD, upstream and working tree with the recorded state, re-checks recorded external state (pull requests, deploys) with the commands the handoff lists, and reports any drift. Files that lived only in the session's temporary scratch space are copied next to the handoff.
+
+The handoff also records what usually gets lost between sessions: watchers and background work (whether you want each one continued, and where it last read up to), other agent sessions this one worked with and the agreements with them, the working rules you set during the session, and the language to use with you and with other agents.
+
+Monitors are defined in a `MONITORS.md` file in the project (kept out of git): target, cadence, restart command, where it stores its read position, and what it reports. The save step creates or updates it, so the definitions carry over any number of handoffs, and the handoff itself records only which monitors continue and their read positions. During a hand-over the old session keeps its monitors running until the receiver is confirmed, then stops them and sends the receiver the final read positions plus the events it handled after writing the file; the receiver resumes from those positions.
 
 ### Privacy
 
-Handoffs often need sensitive context (project names, hostnames) to be useful, so the save step warns instead of blocking: it lists detected sensitive strings and lets you keep, redact or abort, and records what was kept. On load, after you confirm pickup, the receiving agent asks whether to delete the file, and recommends deleting when sensitive items were kept. Handoff files live under your `~/.claude/cache/` and are never part of this repo.
+Handoffs often need sensitive context (project names, hostnames) to be useful, so the save step warns instead of blocking: it lists detected sensitive strings and lets you keep, redact or abort, and records what was kept. After you keep them once in a project, it can remember that choice for the project and stop asking; asking the agent to ask again removes it. On load, after you confirm pickup, the receiving agent asks whether to delete the file, and recommends deleting when sensitive items were kept. Handoff files live under your `~/.claude/cache/` and are never part of this repo.
 
 ### Pairs with project memory
 
@@ -63,10 +82,13 @@ If your profile is available, either in Claude Code's context (for example impor
 /handoff        -->  gather session state; triage durable vs transient
                      (lean mode promotes durable facts into memory);
                      privacy scan; write the document
+  to <s> | new  -->  message the receiver; check its PICKUP line;
+                     on CONFIRMED redirect peers and stop watchers
 
-/handoff load   -->  find this project's handoffs; confirm the choice;
-                     read it; follow its §0 protocol (drift check,
-                     source-session lookup, deletion prompt)
+/handoff load   -->  find this project's handoffs and confirm the choice,
+                     or take a given path; read it; follow its §0
+                     protocol (drift check, PICKUP report, source-session
+                     lookup, deletion prompt)
 ```
 
 Files involved:
@@ -156,7 +178,9 @@ Install only one method: `setup.sh` and `npx skills` both write `~/.claude/skill
 
 After `/handoff`, Claude reports the written file path, the assets directory (or `none`), the topic, the project, the source session ID, and how many sections were filled. It does not print the document back.
 
-After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then opens with `Handoff consumed. Current top priority: …`, any drift since the handoff, and a request to confirm. It takes no write action until you confirm, and then asks whether to delete the handoff.
+After `/handoff to <session>` or `/handoff new`, Claude also reports each hand-over stage: sent, picked up and waiting for your confirmation in the receiver, and complete.
+
+After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then summarizes, in the language the handoff records for you, the objective, the top priority, any drift since the handoff and the watchers it would take over, and asks you to confirm. It takes no write action until you confirm, and then asks whether to delete the handoff.
 
 ## Backup
 
