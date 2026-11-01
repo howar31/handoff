@@ -66,7 +66,7 @@ Monitors are defined in a `MONITORS.md` file in the project (kept out of git): t
 
 ### Privacy
 
-Handoffs often need sensitive context (project names, hostnames) to be useful, so the save step warns instead of blocking: it lists detected sensitive strings and lets you keep, redact or abort, and records what was kept. After you keep them once in a project, it can remember that choice for the project and stop asking; asking the agent to ask again removes it. On load, after you confirm pickup, the receiving agent asks whether to delete the file, and recommends deleting when sensitive items were kept. Handoff files live under your `~/.claude/cache/` and are never part of this repo.
+Handoffs often need sensitive context (project names, hostnames) to be useful, so the save step warns instead of blocking: it lists detected sensitive strings and lets you keep, redact or abort, and records what was kept. After you keep them once in a project, it can remember that choice for the project and stop asking; asking the agent to ask again removes it. On load, the receiving agent asks whether to delete the file when it asks you to confirm pickup, and recommends deleting when sensitive items were kept. Handoff files live under your `~/.claude/cache/` and are never part of this repo.
 
 ### Pairs with project memory
 
@@ -180,7 +180,7 @@ After `/handoff`, Claude reports the written file path, the assets directory (or
 
 After `/handoff to <session>` or `/handoff new`, Claude also reports each hand-over stage: sent, picked up and waiting for your confirmation in the receiver, and complete.
 
-After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then summarizes, in the language the handoff records for you, the objective, the top priority, any drift since the handoff and the watchers it would take over, and asks you to confirm. It takes no write action until you confirm, and then asks whether to delete the handoff.
+After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then summarizes, in the language the handoff records for you, the objective, the top priority, any drift since the handoff and the watchers it would take over, and asks you to confirm, along with whether to delete the handoff after pickup. It takes no write action until you confirm.
 
 ## Backup
 

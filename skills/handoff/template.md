@@ -57,7 +57,17 @@ You are an AI agent receiving a session handoff. Before taking any action:
    including one-line progress notes and replies that follow English tool or agent
    output. Your first message summarizes, in your own words: the objective, §5
    PRIORITY 1, the drift found in step 3, the watchers you would take over, and
-   asks the user to confirm before you proceed.
+   asks the user two things together, before you proceed:
+   a. Take over? (options: take over, not yet; the free-text answer carries any
+      change.)
+   b. After pickup, delete this handoff file (§1 METADATA `file_path`) and its
+      `assets_dir`, if that is not "none"? (options: delete, keep.) If §1 METADATA
+      `sensitive_items` is non-empty, recommend deleting and mention the sensitive
+      items count so the user understands the leakage motivation.
+   If you have the `AskUserQuestion` tool, ask both in one call and repeat that
+   summary, shortened, in the first question, since the user may see only the
+   questions. Otherwise ask in plain text. After "not yet", the answer to b does
+   not apply: ask both again when the user is ready.
 8. Do NOT take any non-readonly action until the user confirms. Do not start a §4
    watcher the source session may still be running until the source confirms it
    has stopped it, or the source is unreachable and the user agrees. The source's
@@ -73,15 +83,11 @@ You are an AI agent receiving a session handoff. Before taking any action:
    not delivered by message, or the source is unreachable, tell those sessions
    yourself, one line each: what you now own and what to send you; if you cannot
    message other sessions, list them for the user instead.
-10. Once the source has reported its watchers stopped (or is unreachable, or
-    there were none), ask the user whether to delete this handoff file (§1 METADATA
-    `file_path`) and its `assets_dir`, if that is not "none". Before deleting,
-    move anything in `assets_dir` that is still needed (scripts a watcher runs,
-    reusable probes) to a durable location and update any reference to it. If
-    §1 METADATA `sensitive_items` is non-empty, recommend deleting and mention
-    the sensitive items count so the user understands the leakage motivation.
-    If you have the `AskUserQuestion` tool, ask with it (options: delete, keep);
-    otherwise ask in plain text.
+10. If the user took over and chose delete in step 7: once the source has reported
+    its watchers stopped (or is unreachable, or there were none), delete the file
+    and its `assets_dir`. Before deleting, move anything in `assets_dir` that is
+    still needed (scripts a watcher runs, reusable probes) to a durable location
+    and update any reference to it.
 ```
 
 ## §1 METADATA — YAML frontmatter or fenced block

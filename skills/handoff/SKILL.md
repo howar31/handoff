@@ -226,7 +226,7 @@ Read `template.md` from this skill's directory (`${CLAUDE_SKILL_DIR}/template.md
 
 ## Step 5: Privacy scan (warn, do not block)
 
-Sensitive context is often **necessary** for the receiving agent to continue work in progress (project names, organization / employer names, hostnames may all be required for comprehension). The scan therefore **warns** the user but does not force redaction. The post-pickup deletion prompt embedded in §0 PROTOCOL (step 10) provides the leakage safeguard.
+Sensitive context is often **necessary** for the receiving agent to continue work in progress (project names, organization / employer names, hostnames may all be required for comprehension). The scan therefore **warns** the user but does not force redaction. The post-pickup deletion prompt embedded in §0 PROTOCOL (step 7) provides the leakage safeguard.
 
 **Remembered choice**: if the project's handoff-convention memory records `privacy_scan: continue`, still run the scan, but do not ask: proceed as if the user picked `continue` and add `Privacy scan: remembered continue` to the Step 8 report. When the user asks to be asked again, remove that line from the memory entry.
 
@@ -247,7 +247,7 @@ Scan the files that will be copied into `assets_dir` (Step 8) as well as the doc
 > - `<item>` (N occurrences)
 > - `<item>` (N occurrences)
 >
-> Sensitive context is often necessary for the receiving agent. The recommended flow is to keep these intact: the receiving agent will be prompted to delete the handoff immediately after pickup is confirmed, preventing long-term leakage.
+> Sensitive context is often necessary for the receiving agent. The recommended flow is to keep these intact: the receiving agent will ask about deleting the handoff when it asks to confirm pickup, preventing long-term leakage.
 >
 > Choose:
 > - `continue`: keep all sensitive items, record them in §1 METADATA `sensitive_items` so deletion is prompted strongly at pickup
