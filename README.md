@@ -40,13 +40,13 @@ Both modes are model-invocable: natural-language requests such as "create a hand
 
 ### Hand over to a running session
 
-In Claude Code, sessions on the same machine can message each other. Open a new session for the work, then run `/handoff new` (or `/handoff to <session>`) in the old one. After writing the file, the old session:
+In Claude Code, sessions on the same machine can message each other. Open a new session for the work, then run `/handoff new` (or `/handoff to <session>`) in the old one. Before writing, the old session asks the sessions it works with to queue their messages for it until the hand-over ends, and to send only what cannot wait. If the hand-over has not ended after 60 minutes, a session checks whether the old session still answers, then the receiver; it tells you only when neither does. After writing the file, it:
 
 1. Picks the receiver: the named session, or for `new` the one idle session of this project that started after the old one. It asks you only when there are several candidates or none.
 2. Sends it a message that points to the file. The receiver loads it and, before asking you anything, replies with one `PICKUP` line: the top priority in its own words, the language it will use with you, and any drift.
 3. Checks that line against the file and answers `MATCH` or the correct values, then tells you the receiver is waiting for your confirmation. If the receiver goes idle without replying, it tells you to check that session.
-4. Answers the receiver's questions from its own context until you confirm in the receiver, which then sends `CONFIRMED`.
-5. Tells the sessions it worked with to address the receiver from now on, stops its own watchers and sends the receiver their last-seen positions, and reports that it can be closed.
+4. Answers the receiver's questions from its own context until you confirm in the receiver, which then sends `CONFIRMED`. If you answer "not yet" there, the receiver sends `DEFERRED`: the old session keeps the work and its watchers, and the other sessions send to it again.
+5. Tells the sessions it worked with to address the receiver from now on and to send it what they queued, stops its own watchers, sends the receiver their last-seen positions and what arrived after the file was written, and reports that it can be closed.
 
 Without `to` or `new`, or in an agent without cross-session messaging, `/handoff` only writes the file and you load it yourself.
 
@@ -82,7 +82,8 @@ If your profile is available, either in Claude Code's context (for example impor
 /handoff        -->  gather session state; triage durable vs transient
                      (lean mode promotes durable facts into memory);
                      privacy scan; write the document
-  to <s> | new  -->  message the receiver; check its PICKUP line;
+  to <s> | new  -->  first ask peers to queue their messages;
+                     message the receiver; check its PICKUP line;
                      on CONFIRMED redirect peers and stop watchers
 
 /handoff load   -->  find this project's handoffs and confirm the choice,

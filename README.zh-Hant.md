@@ -40,13 +40,13 @@
 
 ### 交給執行中的 session
 
-在 Claude Code 中，同一台電腦上的 session 可以互相傳訊息。先為這份工作開一個新 session，再到舊 session 執行 `/handoff new`（或 `/handoff to <session>`）。寫完檔案後，舊 session 會：
+在 Claude Code 中，同一台電腦上的 session 可以互相傳訊息。先為這份工作開一個新 session，再到舊 session 執行 `/handoff new`（或 `/handoff to <session>`）。開始寫之前，舊 session 會請合作中的 session 在交接結束前先把要給它的訊息排隊，只傳不能等的訊息。交接超過 60 分鐘還沒結束時，合作中的 session 會先確認舊 session 是否還有回應，再確認接手者；兩邊都沒有回應才告訴你。寫完檔案後，它會：
 
 1. 選定接手者：指定的 session；`new` 則是這個專案中、比舊 session 晚啟動的那一個閒置 session。只有在候選有多個或沒有時才問你。
 2. 傳一則指向檔案的訊息。接手者載入後，在問你任何事之前先回一行 `PICKUP`：用自己的話寫的最優先事項、要跟你使用的語言，以及狀態差異。
 3. 對照檔案檢查這一行，回覆 `MATCH` 或正確的值，然後告訴你接手者正在等你確認。接手者沒有回覆就進入閒置時，會提醒你去看那個 session。
-4. 在你於接手者確認之前，用自己的 context 回答接手者的問題；你確認後，接手者送出 `CONFIRMED`。
-5. 通知合作過的 session 之後改找接手者，停止自己的監看並把各監看最後讀到的位置傳給接手者，然後回報可以關閉。
+4. 在你於接手者確認之前，用自己的 context 回答接手者的問題；你確認後，接手者送出 `CONFIRMED`。你在那邊回答「還沒」時，接手者送出 `DEFERRED`：舊 session 繼續負責這份工作和監看，其他 session 恢復傳訊給它。
+5. 通知合作過的 session 之後改找接手者，並把排隊的訊息傳給接手者；停止自己的監看，把各監看最後讀到的位置和寫完檔案後收到的內容傳給接手者，然後回報可以關閉。
 
 沒有 `to` 或 `new`，或 agent 不支援跨 session 傳訊時，`/handoff` 只寫入檔案，由你自己載入。
 
@@ -82,7 +82,8 @@
 /handoff        -->  整理 session 狀態；區分長期與暫時資訊
                      （lean 模式把長期資訊寫進記憶）；
                      隱私掃描；寫入文件
-  to <s> | new  -->  傳訊給接手者；檢查它的 PICKUP 回覆；
+  to <s> | new  -->  先請 peer 把訊息排隊；
+                     傳訊給接手者；檢查它的 PICKUP 回覆；
                      收到 CONFIRMED 後通知 peer、停止監看
 
 /handoff load   -->  找出這個專案的交接文件並確認選擇，

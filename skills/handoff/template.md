@@ -33,7 +33,7 @@ You are an AI agent receiving a session handoff. Before taking any action:
    before asking the user anything, with one line in the agent-to-agent language
    (§2 LANGUAGE):
    PICKUP <file name> | P1: <§5 PRIORITY 1 in your own words> | lang: <user-facing language from §2> | drift: <none | summary>
-   The keywords PICKUP, MATCH, MISMATCH, CONFIRMED and the field labels stay
+   The keywords PICKUP, MATCH, MISMATCH, DEFERRED, CONFIRMED and the field labels stay
    literal in every language; only the free text is translated. Wait for the
    source's answer before step 7. MATCH needs no reply. MISMATCH carries the
    correct values: use them. If no answer comes (the source is unreachable, or
@@ -67,7 +67,10 @@ You are an AI agent receiving a session handoff. Before taking any action:
    If you have the `AskUserQuestion` tool, ask both in one call and repeat that
    summary, shortened, in the first question, since the user may see only the
    questions. Otherwise ask in plain text. After "not yet", the answer to b does
-   not apply: ask both again when the user is ready.
+   not apply: ask both again when the user is ready. If this handoff was
+   delivered by message, also send the source one line: DEFERRED <file name>.
+   The source keeps the work, its watchers and its collaborating sessions until
+   you send CONFIRMED.
 8. Do NOT take any non-readonly action until the user confirms. Do not start a §4
    watcher the source session may still be running until the source confirms it
    has stopped it, or the source is unreachable and the user agrees. The source's
@@ -81,7 +84,8 @@ You are an AI agent receiving a session handoff. Before taking any action:
    source one line: CONFIRMED <file name>. The source then redirects the sessions
    in §4 COLLABORATING SESSIONS to you and stops its watchers. If this handoff was
    not delivered by message, or the source is unreachable, tell those sessions
-   yourself, one line each: what you now own and what to send you; if you cannot
+   yourself, one line each: what you now own and what to send you, including any
+   messages they queued while the source was handing off (§4 OPEN); if you cannot
    message other sessions, list them for the user instead.
 10. If the user took over and chose delete in step 7: once the source has reported
     its watchers stopped (or is unreachable, or there were none), delete the file
