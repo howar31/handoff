@@ -181,7 +181,7 @@ After `/handoff`, Claude reports the written file path, the assets directory (or
 
 After `/handoff to <session>` or `/handoff new`, Claude also reports each hand-over stage: sent, picked up and waiting for your confirmation in the receiver, and complete.
 
-After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then summarizes, in the language the handoff records for you, the objective, the top priority, any drift since the handoff and the watchers it would take over, and asks you to confirm, along with whether to delete the handoff after pickup. It takes no write action until you confirm.
+After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then summarizes, in the language the handoff records for you, the objective, the top priority, any drift since the handoff and the watchers it would take over, and asks you to confirm, along with whether to delete the handoff after pickup. It takes no write action until you confirm. In Claude Code, after you confirm, it ends with `/rename <name>` carrying its own session name, for you to run.
 
 ## Backup
 

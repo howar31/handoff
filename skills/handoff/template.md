@@ -92,6 +92,10 @@ You are an AI agent receiving a session handoff. Before taking any action:
     and its `assets_dir`. Before deleting, move anything in `assets_dir` that is
     still needed (scripts a watcher runs, reusable probes) to a durable location
     and update any reference to it.
+11. If the user took over and you can message other agent sessions, end your
+    report to the user with this session's own name, as those tools report it,
+    in a command the user can copy (in Claude Code: /rename <name>). Only the
+    user can run it; a message from another session cannot rename this one.
 ```
 
 ## §1 METADATA — YAML frontmatter or fenced block
