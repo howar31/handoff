@@ -2,7 +2,7 @@
 
 The document SAVE mode writes. Read by SKILL.md Save Mode Step 4. Produce all 15 sections (§0 to §14) in order. **Empty sections retain the header with `(none)` as the body**: this tells the receiving LLM the topic was considered, not forgotten.
 
-**Lean mode:** keep every section header, but replace any body that would duplicate the project's memory with a one-line pointer to the canonical entry (e.g. "see `editor-invariants.md`"). Always spell out the TRANSIENT sections (§1 METADATA, §3b current slice, §4 STATE including its watchers and collaborating sessions, §5 PRIORITIES, §6 this-session DECISIONS, §8 this-session DEAD ENDS, §9 OPEN QUESTIONS, §14 NEXT ACTIONS); compress the DURABLE sections (§2 ORIENTATION except its LANGUAGE line, §7 CONSTRAINTS except its PROCEDURE lines, §10/§11/§12 where they restate memory) to pointers. §13 READ FIRST is always the pointer list to the canonical memory entries.
+**Lean mode:** keep every section header, but replace any body that would duplicate the project's memory with a one-line pointer to the canonical entry (e.g. "see `editor-invariants.md`"). Always spell out the TRANSIENT sections (§1 METADATA, §3b current slice, §3d recent exchange, §4 STATE including its watchers and collaborating sessions, §5 PRIORITIES, §6 this-session DECISIONS, §8 this-session DEAD ENDS, §9 OPEN QUESTIONS, §14 NEXT ACTIONS); compress the DURABLE sections (§2 ORIENTATION except its LANGUAGE line, §7 CONSTRAINTS except its PROCEDURE lines, §10/§11/§12 where they restate memory) to pointers. §13 READ FIRST is always the pointer list to the canonical memory entries, plus its WORKING SET spelled out.
 
 ---
 
@@ -48,7 +48,8 @@ You are an AI agent receiving a session handoff. Before taking any action:
    b. Read the source transcript: §1 METADATA `transcript_path` (JSON Lines; the
       user's own messages are entries with "type":"user" whose message content is
       a string or text blocks; §12 has a ready-made extraction command). It is the
-      authority for the user's exact words. In Claude Code the source session can
+      authority for the user's exact words. Entries after §1 `transcript_anchor`
+      were written after this document. In Claude Code the source session can
       also be reopened with `claude --resume <session_id>` from §1 `cwd`. The
       transcript is deleted after the tool's retention period.
    c. Ask the user.
@@ -60,10 +61,12 @@ You are an AI agent receiving a session handoff. Before taking any action:
    asks the user two things together, before you proceed:
    a. Take over? (options: take over, not yet; the free-text answer carries any
       change.)
-   b. After pickup, delete this handoff file (§1 METADATA `file_path`) and its
-      `assets_dir`, if that is not "none"? (options: delete, keep.) If §1 METADATA
-      `sensitive_items` is non-empty, recommend deleting and mention the sensitive
-      items count so the user understands the leakage motivation.
+   b. When to delete this handoff file (§1 METADATA `file_path`) and its
+      `assets_dir`, if that is not "none"? (options: when this work is done, now,
+      keep.) Recommend "when this work is done": until then the file is what you
+      re-read after your own context is compacted (step 12). If §1 METADATA
+      `sensitive_items` is non-empty, mention the sensitive items count and
+      recommend against keep, so the user understands the leakage motivation.
    If you have the `AskUserQuestion` tool, ask both in one call and repeat that
    summary, shortened, in the first question, since the user may see only the
    questions. Otherwise ask in plain text. After "not yet", the answer to b does
@@ -87,15 +90,32 @@ You are an AI agent receiving a session handoff. Before taking any action:
    yourself, one line each: what you now own and what to send you, including any
    messages they queued while the source was handing off (§4 OPEN); if you cannot
    message other sessions, list them for the user instead.
-10. If the user took over and chose delete in step 7: once the source has reported
+10. If the user took over and chose "now" in step 7: once the source has reported
     its watchers stopped (or is unreachable, or there were none), delete the file
-    and its `assets_dir`. Before deleting, move anything in `assets_dir` that is
+    and its `assets_dir`. With "when this work is done", delete them at the time
+    step 12 names. Before deleting, move anything in `assets_dir` that is
     still needed (scripts a watcher runs, reusable probes) to a durable location
     and update any reference to it.
 11. If the user took over and you can message other agent sessions, end your
     report to the user with this session's own name, as those tools report it,
     in a command the user can copy (in Claude Code: /rename <name>). Only the
     user can run it; a message from another session cannot rename this one.
+12. Compaction anchor. If the user took over and did not choose "now" in step 7,
+    and your tool reloads a persistent store into your context after it compacts
+    the conversation (in Claude Code: the project's auto memory index,
+    MEMORY.md), add one entry there before you end your report to the user:
+    Active handoff for session <your session ID, else your session name>:
+    <§1 file_path>. After a context compaction in that session, re-read its
+    §5, §7 and §14 before acting. Other sessions ignore this entry.
+    In Claude Code, write it as a memory entry named active-handoff-<§1 topic>
+    in the memory format your instructions give, and make its MEMORY.md index
+    line carry the whole instruction on its own (your session ID, the file
+    path, re-read §5, §7 and §14 after compaction): after a compaction only the
+    index is sure to be reloaded. The work
+    is done when §14 is complete, when the user says so, or when a new handoff
+    you write supersedes this one: then remove the entry, and with "when this
+    work is done" delete the file and its `assets_dir` (step 10). Without such a
+    store, skip this step.
 ```
 
 ## §1 METADATA — YAML frontmatter or fenced block
@@ -111,6 +131,7 @@ session_id: <ID of the session that wrote this handoff, or "unknown">
 session_name: <the name other sessions use to message the writing session, or "unknown">
 delivered_to: <name of the session this handoff was sent to, or "none">
 transcript_path: <absolute path of that session's transcript (JSONL), or "unknown">
+transcript_anchor: <"line <N>, uuid <uuid>": the transcript's line count and its last entry uuid when this file was written, or "unknown">
 compacted: <true if the source session was compacted before this save, else false>
 file_path: <the full absolute path this handoff is being written to>
 assets_dir: <absolute path of the companion assets directory, or "none">
@@ -135,13 +156,15 @@ Then include:
 
 Pull from the user profile (SKILL.md "User profile hints": what is already in your context, else `~/.claude/USER.md` if it exists) and from what the user said this session. Do not assume any particular identity file exists; omit fields you cannot determine. In lean mode, keep the LANGUAGE line plus anything that differs from the profile, and point to the profile for the rest.
 
-## §3 MISSION — three subsections
+## §3 MISSION — four subsections
 
 **(a) Long-term mission**: what the larger project is for, why it exists, who it serves.
 
 **(b) Current session slice + recent intent**: what this session focused on, what user has been actively pushing on in the most recent hours / turns, success criteria for the immediate slice.
 
 **(c) Intentionally deferred from scope**: work explicitly excluded from this session, with reason. Distinct from "pending" or "dead end": this is "we know about it, we chose not to do it now."
+
+**(d) Recent exchange (verbatim)**: the last part of the conversation, copied, not summarized, because the latest turns are where a summary most often drifts. The user's last 5 messages before the one that asked for this handoff, oldest first, then that request, marked `(the handoff request)`, then what you wrote to the user between the previous of those messages and the request (your replies, including turns started by peer messages or task notifications), headed by its last timestamp. Each item is a block quote headed by its ISO 8601 timestamp, its text copied unchanged: the only cuts are a user message over 2,000 characters, cut at its end, and the reply, cut at its start, each marked `[truncated: transcript line <N>]`. Answers the user gave to choice questions count as messages. Leave out tool output and system-injected text. This subsection reflects the moment of writing: §5 and §14 stay the authority for what to do next.
 
 ## §4 STATE
 
@@ -313,8 +336,8 @@ Examples of what to include:
 When `transcript_path` is known, always include this lookup (substitute the real path; plain `grep -n` on the same file searches everything else):
 
 ```
-# Source session: the user's own messages, in order (needs jq)
-jq -r 'select(.type=="user" and (.isCompactSummary|not) and (.isMeta|not)) | .message.content | if type=="string" then . else (map(select(.type=="text") | .text) | join("\n")) end | select(length>0)' <transcript_path>
+# Source session: the user's own messages, slash commands and choice answers, in order (needs jq)
+jq -c 'select(.type=="user" and (.isCompactSummary|not) and (.isMeta|not)) | {line: input_line_number, ts: .timestamp} + (if (.toolUseResult|type)=="object" and (.toolUseResult.answers|type)=="object" then {kind: "choice", text: (.toolUseResult.answers | to_entries | map("Q: \(.key[0:80]) A: \(.value)") | join("\n"))} else {kind: "message", text: (.message.content | if type=="string" then . else (map(select(.type=="text") | .text) | join("\n")) end)} end) | select(.text | length > 0) | select((.text | startswith("<") | not) or (.text | startswith("<command-"))) | if (.text | startswith("<command-")) then .text = ([(.text | capture("<command-name>(?<n>[^<]*)</command-name>").n), (.text | capture("<command-args>(?<a>[^<]*)</command-args>").a)] | map(select(. != null and . != "")) | join(" ")) else . end' <transcript_path>
 ```
 
 All paths in commands must be absolute.
@@ -328,6 +351,13 @@ All paths in commands must be absolute.
 - The project's `MONITORS.md`, when §4 lists any watcher
 - The plan file, if this session wrote one (e.g. in plan mode), with a note on how much of it is done
 - Any other docs critical to safe action
+
+End (a) with the WORKING SET: up to 5 files this session read or edited that the §14 steps act on, most relevant to STEP 1 first (most recently modified breaks ties). List them even when §4 already lists them as modified. Format each as:
+
+```
+WORKING SET: <absolute path>[:<start>-<end> when only that range matters]
+  WHY: <what the next step does with it>
+```
 
 **(b) REFERENCE MATERIALS** (optional context): external docs, issue tracker / wiki / chat links, upstream documentation.
 

@@ -62,11 +62,17 @@ On load, before its first message, the receiving agent compares the current git 
 
 The handoff also records what usually gets lost between sessions: watchers and background work (whether you want each one continued, and where it last read up to), other agent sessions this one worked with and the agreements with them, the working rules you set during the session, and the language to use with you and with other agents.
 
+The last part of the conversation is copied verbatim rather than summarized: your last five messages (answers to choice questions included), the message that asked for the handoff, and the agent's replies since your previous message, each cut at 2,000 characters. The handoff also lists up to five files the next steps work on, with line ranges, and records how far the source transcript had reached when it was written, so the receiver can tell which transcript entries came after it.
+
+### After the receiving session compacts
+
+Once the receiving session's context is compacted, what it read from the handoff survives only in the compaction summary. In Claude Code, after you confirm pickup, the receiver adds an `active-handoff-<topic>` entry to the project's auto memory, which Claude Code reloads after compaction. The entry names the handoff file and tells that session to re-read the priorities, constraints and next actions after a compaction; other sessions ignore it. The entry is removed when the work is done, when you say so, or when that session writes a new handoff.
+
 Monitors are defined in a `MONITORS.md` file in the project (kept out of git): target, cadence, restart command, where it stores its read position, and what it reports. The save step creates or updates it, so the definitions carry over any number of handoffs, and the handoff itself records only which monitors continue and their read positions. During a hand-over the old session keeps its monitors running until the receiver is confirmed, then stops them and sends the receiver the final read positions plus the events it handled after writing the file; the receiver resumes from those positions.
 
 ### Privacy
 
-Handoffs often need sensitive context (project names, hostnames) to be useful, so the save step warns instead of blocking: it lists detected sensitive strings and lets you keep, redact or abort, and records what was kept. After you keep them once in a project, it can remember that choice for the project and stop asking; asking the agent to ask again removes it. On load, the receiving agent asks whether to delete the file when it asks you to confirm pickup, and recommends deleting when sensitive items were kept. Handoff files live under your `~/.claude/cache/` and are never part of this repo.
+Handoffs often need sensitive context (project names, hostnames) to be useful, so the save step warns instead of blocking: it lists detected sensitive strings and lets you keep, redact or abort, and records what was kept. After you keep them once in a project, it can remember that choice for the project and stop asking; asking the agent to ask again removes it. On load, the receiving agent asks when to delete the file (when the work is done, now, or keep) when it asks you to confirm pickup; it recommends deleting when the work is done, and recommends against keeping when sensitive items were kept. Handoff files live under your `~/.claude/cache/` and are never part of this repo.
 
 ### Pairs with project memory
 
@@ -89,7 +95,7 @@ If your profile is available, either in Claude Code's context (for example impor
 /handoff load   -->  find this project's handoffs and confirm the choice,
                      or take a given path; read it; follow its §0
                      protocol (drift check, PICKUP report, source-session
-                     lookup, deletion prompt)
+                     lookup, deletion prompt, compaction anchor)
 ```
 
 Files involved:
@@ -181,11 +187,11 @@ After `/handoff`, Claude reports the written file path, the assets directory (or
 
 After `/handoff to <session>` or `/handoff new`, Claude also reports each hand-over stage: sent, picked up and waiting for your confirmation in the receiver, and complete.
 
-After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then summarizes, in the language the handoff records for you, the objective, the top priority, any drift since the handoff and the watchers it would take over, and asks you to confirm, along with whether to delete the handoff after pickup. It takes no write action until you confirm. In Claude Code, after you confirm, it ends with `/rename <name>` carrying its own session name, for you to run.
+After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then summarizes, in the language the handoff records for you, the objective, the top priority, any drift since the handoff and the watchers it would take over, and asks you to confirm, along with when to delete the handoff. It takes no write action until you confirm. In Claude Code, after you confirm, it ends with `/rename <name>` carrying its own session name, for you to run.
 
 ## Backup
 
-The skill directory in `~/.claude/skills/` is a symlink back into the repo, so the repo is the single source of truth and any backup that includes the clone covers it. Handoff documents under `~/.claude/cache/handoff/` are meant to be short-lived and are deleted after pickup when you agree; do not rely on them as a record.
+The skill directory in `~/.claude/skills/` is a symlink back into the repo, so the repo is the single source of truth and any backup that includes the clone covers it. Handoff documents under `~/.claude/cache/handoff/` are meant to be short-lived and are deleted when the work is done or right after pickup, as you choose; do not rely on them as a record.
 
 ## Uninstall
 

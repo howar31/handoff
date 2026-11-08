@@ -5,7 +5,7 @@ description: >-
 when_to_use: >-
   SAVE: the user types `/handoff` (without `load`) or asks "做交接", "session 交接", "交接這個 session", "建立交接文件", "把 context 存起來", "create a handoff", "save context for handoff", "save session for next agent"; optional free-text focus or a `topic: slug` prefix. SAVE and hand over: `/handoff to NAME` or `/handoff new`, or "交給新 session", "請新 agent 接交接", "交接給 NAME", "hand off to the new session". LOAD: the user types `/handoff load` or asks "接續交接", "讀取交接文件", "上次做到哪", "之前的進度", "之前的工作", "load handoff", "continue from previous session", "resume the previous session"; optional filename / substring filter. Ask the user when the intent is ambiguous.
 argument-hint: "[load [filter | path]] | [to name | new] [topic: slug] [focus]"
-compatibility: Designed for Claude Code. In other agents SAVE and LOAD work in self-contained mode, without memory-based lean mode, source-session lookup or hand-over to another session.
+compatibility: Designed for Claude Code. In other agents SAVE and LOAD work in self-contained mode, without memory-based lean mode, the compaction anchor, source-session lookup or hand-over to another session.
 ---
 
 # /handoff — Session Handoff Skill
@@ -36,7 +36,7 @@ Cross-session knowledge has three homes. Route each fact to ONE home; duplicatin
 
 ### Two SAVE modes
 
-- **Lean**: use when the project HAS an established memory store (`MEMORY.md` exists in its memory directory) and/or a handoff-convention memory. Durable knowledge stays in memory; the handoff records ONLY transient state + POINTERS to the canonical memory entries. Any section whose body would duplicate memory is compressed to a one-line pointer. Before writing, PROMOTE any durable fact surfaced this session into memory (create/update the entry) instead of leaving it only in the handoff.
+- **Lean**: use when the project HAS an established memory store (`MEMORY.md` exists in its memory directory and indexes at least one entry other than `active-handoff-*` compaction anchors) and/or a handoff-convention memory. Durable knowledge stays in memory; the handoff records ONLY transient state + POINTERS to the canonical memory entries. Any section whose body would duplicate memory is compressed to a one-line pointer. Before writing, PROMOTE any durable fact surfaced this session into memory (create/update the entry) instead of leaving it only in the handoff.
 - **Self-contained**: the default when there is NO memory store. The handoff spells everything out and stands alone (the original behavior).
 
 A handoff-convention memory in the project MAY override these defaults (e.g. force lean, or specify the canonical memory list / a keep-vs-delete policy). Honour it.
@@ -183,10 +183,24 @@ If the session ID is unknown or no file matches, record both as `unknown`.
 **Recover compacted context**: if this session was compacted (the conversation starts from a summary of earlier work, or earlier turns are otherwise no longer visible), the summary has lost detail: early decisions, rejected alternatives, the user's exact wording. Before writing, read the user's own messages back from the transcript and recover what the summary dropped:
 
 ```bash
-jq -r 'select(.type=="user" and (.isCompactSummary|not) and (.isMeta|not)) | .message.content | if type=="string" then . else (map(select(.type=="text") | .text) | join("\n")) end | select(length>0)' "$TRANSCRIPT"
+jq -c 'select(.type=="user" and (.isCompactSummary|not) and (.isMeta|not)) | {line: input_line_number, ts: .timestamp} + (if (.toolUseResult|type)=="object" and (.toolUseResult.answers|type)=="object" then {kind: "choice", text: (.toolUseResult.answers | to_entries | map("Q: \(.key[0:80]) A: \(.value)") | join("\n"))} else {kind: "message", text: (.message.content | if type=="string" then . else (map(select(.type=="text") | .text) | join("\n")) end)} end) | select(.text | length > 0) | select((.text | startswith("<") | not) or (.text | startswith("<command-"))) | if (.text | startswith("<command-")) then .text = ([(.text | capture("<command-name>(?<n>[^<]*)</command-name>").n), (.text | capture("<command-args>(?<a>[^<]*)</command-args>").a)] | map(select(. != null and . != "")) | join(" ")) else . end' "$TRANSCRIPT"
 ```
 
-Use `grep -n '<keyword>' "$TRANSCRIPT"` for anything else (tool output, agent replies). Set §1 `compacted: true` when this applies.
+Each output line is one user message, slash command or answer to a choice question (`kind: "choice"`), with its transcript line and UTC timestamp; system-injected entries (task notifications, peer messages) are left out. The transcript format is internal to the tool and can change: if the output looks wrong, fall back to reading the transcript directly. Use `grep -n '<keyword>' "$TRANSCRIPT"` for anything else (tool output, agent replies). Set §1 `compacted: true` when this applies.
+
+**Recent exchange** (template §3d): take both parts from the transcript rather than from memory, and copy the text of each output as it is: no rewording, shortening or `[...]`; the commands make the only cuts and write their `[truncated: …]` markers themselves. The user's last 5 messages and the request for this handoff (the last line, when the request is the latest message), each cut to 2,000 characters; convert the UTC timestamps to the timezone used elsewhere in the document:
+
+```bash
+jq -c 'select(.type=="user" and (.isCompactSummary|not) and (.isMeta|not)) | {line: input_line_number, ts: .timestamp} + (if (.toolUseResult|type)=="object" and (.toolUseResult.answers|type)=="object" then {kind: "choice", text: (.toolUseResult.answers | to_entries | map("Q: \(.key[0:80]) A: \(.value)") | join("\n"))} else {kind: "message", text: (.message.content | if type=="string" then . else (map(select(.type=="text") | .text) | join("\n")) end)} end) | select(.text | length > 0) | select((.text | startswith("<") | not) or (.text | startswith("<command-"))) | if (.text | startswith("<command-")) then .text = ([(.text | capture("<command-name>(?<n>[^<]*)</command-name>").n), (.text | capture("<command-args>(?<a>[^<]*)</command-args>").a)] | map(select(. != null and . != "")) | join(" ")) else . end | if (.text | length) > 2000 then .text = .text[0:2000] + " [truncated: transcript line \(.line)]" else . end' "$TRANSCRIPT" | tail -n 6
+```
+
+Your replies between the user's previous message and the latest one (normally the handoff request), including turns started by peer messages or task notifications: the last one's timestamp and transcript line, then their text joined, keeping the last 2,000 characters:
+
+```bash
+jq -n -r 'reduce (inputs | select((.type=="user" or .type=="assistant") and (.isMeta|not) and (.isCompactSummary|not))) as $e ({cur: [], last: []}; if $e.type=="assistant" then .cur += [$e.message.content[]? | select(.type=="text") | {ts: $e.timestamp, line: input_line_number, text: .text}] elif ($e.message.content | if type=="string" then . else (map(select(.type=="text") | .text) | join("")) end) as $t | ($t | length > 0) and (($t | startswith("<") | not) or ($t | startswith("<command-"))) then .last = .cur | .cur = [] else . end) | .last | if length == 0 then empty else (map(.text) | join("\n")) as $r | (.[-1].ts + " (transcript line \(.[-1].line))\n" + (if ($r | length) > 2000 then "[truncated: transcript line \(.[0].line)] " + $r[-2000:] else $r end)) end' "$TRANSCRIPT"
+```
+
+Without a transcript, copy both from the conversation, if still visible.
 
 Then internally collect (do not show to user yet):
 
@@ -213,10 +227,11 @@ Then internally collect (do not show to user yet):
 - **Open questions**: items needing user input vs items needing investigation
 - **Constraints and DON'Ts**: from project memory, from user-stated rules this session, from project's CLAUDE.md / SPEC.md if read this session
 - **Artifacts produced**: screenshots, generated files, probe captures, logs, with absolute paths
+- **Working set**: the files this session read or edited that the next steps act on (template §13 WORKING SET), with the line range when only part of a file matters
 
 Apply the focus guidance from the arguments (if any) to weight emphasis: e.g. if focus says "focus on lock contention findings", expand §6 DECISIONS and §8 DEAD ENDS sections around that topic, compress others.
 
-**Select mode + triage** (see "Information routing model"): check whether the project's memory directory has a memory store (`MEMORY.md` exists) and/or a handoff-convention memory → write **lean**; else **self-contained**. Then TRIAGE every fact gathered above into durable vs transient. In lean mode, for each DURABLE fact (recurring constraint / workflow / invariant / architecture / roadmap / backlog), PROMOTE it into memory now (create or update the entry, dedup against what exists) and reference it from §13; do NOT spell it out in the handoff; the doc keeps only transient state.
+**Select mode + triage** (see "Information routing model"): check whether the project's memory directory has a memory store (`MEMORY.md` exists and indexes an entry other than `active-handoff-*` anchors) and/or a handoff-convention memory → write **lean**; else **self-contained**. Then TRIAGE every fact gathered above into durable vs transient. In lean mode, for each DURABLE fact (recurring constraint / workflow / invariant / architecture / roadmap / backlog), PROMOTE it into memory now (create or update the entry, dedup against what exists) and reference it from §13; do NOT spell it out in the handoff; the doc keeps only transient state.
 
 ---
 
@@ -256,7 +271,7 @@ Scan the files that will be copied into `assets_dir` (Step 8) as well as the doc
 > - `redact: <items>`: replace specified items with placeholders (`<ORG>`, `<HOST>`, `<HANDLE>`, `<EMAIL>`)
 > - `abort`: cancel write"
 
-**If user picks `continue`**: proceed. If the project's memory directory already has a `MEMORY.md` (so recording the choice does not switch later saves to lean mode) and no remembered choice yet, ask whether to remember `continue` for this project (choice question: remember, ask every time); on `remember`, add `privacy_scan: continue` to the project's handoff-convention memory entry (create the entry, and its index line, if there is none). Only `continue` can be remembered: what to redact differs every time. Ensure §1 METADATA `sensitive_items` field lists each item + count. Ensure §7 CONSTRAINTS includes: `CONSTRAINT: This handoff contains sensitive context (see §1 METADATA sensitive_items). Delete this file immediately after the receiving agent confirms pickup is complete.`
+**If user picks `continue`**: proceed. If the project already has a memory store as the lean-mode condition defines it (so recording the choice does not switch later saves to lean mode) and no remembered choice yet, ask whether to remember `continue` for this project (choice question: remember, ask every time); on `remember`, add `privacy_scan: continue` to the project's handoff-convention memory entry (create the entry, and its index line, if there is none). Only `continue` can be remembered: what to redact differs every time. Ensure §1 METADATA `sensitive_items` field lists each item + count. Ensure §7 CONSTRAINTS includes: `CONSTRAINT: This handoff contains sensitive context (see §1 METADATA sensitive_items). Do not choose keep at pickup; delete this file now or when the work it hands over is done (§0 steps 7 and 12).`
 
 **If user picks `redact`**: apply replacements, re-scan the rewritten content (rewriting may introduce new matches via context expansion). Loop until clean or user explicitly accepts remaining items. Update §1 METADATA `sensitive_items` to reflect what remains (empty list if fully clean).
 
@@ -295,15 +310,20 @@ If the user profile states a timezone, prefix both `date` calls with `TZ=<its IA
 
 ## Step 7: Fill in path-dependent metadata
 
-Set §1 `file_path` to `$FILE`, `assets_dir` to `$ASSETS_DIR` (or `none` if nothing will be copied), and point §4 Recent artifacts at the copied locations. If you can list sessions, set §1 `session_name` to the name the listing gives this session (else `unknown`). Set `delivered_to` to `none`; Step 9 updates it once the receiver is picked.
+Set §1 `file_path` to `$FILE`, `assets_dir` to `$ASSETS_DIR` (or `none` if nothing will be copied), and point §4 Recent artifacts at the copied locations. If you can list sessions, set §1 `session_name` to the name the listing gives this session (else `unknown`). Set `delivered_to` to `none`; Step 9 updates it once the receiver is picked. Set `transcript_anchor` just before writing, or `unknown` without a transcript:
+
+```bash
+printf 'line %s, uuid %s\n' "$(wc -l < "$TRANSCRIPT" | tr -d ' ')" "$(jq -r 'select(.uuid) | .uuid' "$TRANSCRIPT" | tail -n 1)"
+```
 
 ---
 
 ## Step 8: Copy assets, write the file, and report
 
-1. If any artifact the next agent needs lives in a session-specific temporary directory, `mkdir -p "$ASSETS_DIR"` and copy it there. Reusable tools (watch scripts, probes, backtests) go instead to a durable git-excluded folder in the project, listed in §11, because `assets_dir` is deleted after pickup. Leave large or regenerable files where they are and mark them `TRANSIENT (may be gone)` in §4 instead.
+1. If any artifact the next agent needs lives in a session-specific temporary directory, `mkdir -p "$ASSETS_DIR"` and copy it there. Reusable tools (watch scripts, probes, backtests) go instead to a durable git-excluded folder in the project, listed in §11, because `assets_dir` is deleted once the receiver is done with it. Leave large or regenerable files where they are and mark them `TRANSIENT (may be gone)` in §4 instead.
 2. Write the full content to `$FILE`.
-3. Report to user, in the user's language:
+3. **Supersede this session's anchor**: if the project's memory holds an `active-handoff-*` entry for this session (it took over an earlier handoff, template §0 step 12), the new file supersedes that one: remove the entry and its index line, and delete the earlier file and its `assets_dir` unless the user chose keep for it.
+4. Report to user, in the user's language:
 
 ```
 Handoff written: <absolute file path>
@@ -367,6 +387,7 @@ You are loading a handoff written by a previous session. The doc is LLM-facing; 
      ~/.claude/cache/handoff/*.md                                               # by recorded path
    ```
 3. If the arguments carry a filter (any non-empty remainder after the `load` / `resume` / `read` keyword was stripped in Step 0), apply it as a **case-insensitive substring match** against each candidate filename. Reduce the candidate set accordingly.
+4. Check the memory directory for `active-handoff-*` compaction anchors (template §0 step 12). Mark a candidate an anchor points to as `(active in session <id or name>)` in Step 2: another session may own that work. Remove an anchor, with its index line, when the file it points to no longer exists.
 
 ## Step 2: Present candidates and confirm
 
@@ -477,6 +498,8 @@ Behavior: LOAD mode, direct path. Read the file without listing or confirming ca
 - Route by the Information routing model: durable → memory (PROMOTE it, don't just describe it here), transient → this doc. In lean mode (project has a memory store) compress memory-duplicating sections to pointers; never re-spell memory.
 - The memory directory is per repository (shared by worktrees and subdirectories), not per cwd.
 - If the session was compacted, recover detail from the transcript before writing.
+- Copy §3d recent exchange from the transcript verbatim; set §1 `transcript_anchor` just before writing; list the §13 WORKING SET.
+- A new handoff supersedes this session's own `active-handoff-*` anchor: remove it and handle the earlier file (Step 8).
 - Record `session_id` and `transcript_path` in §1; include the transcript lookup commands in §12.
 - Copy needed session-scoped files into `assets_dir`; reusable tools go to a durable project folder instead.
 - Define every watcher in the project's `MONITORS.md` and record only STATUS and CURSOR in the handoff; record every collaborating session with its agreements, and external state re-checked just before writing.
