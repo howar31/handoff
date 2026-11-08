@@ -1,10 +1,8 @@
 # Handoff document template
 
-The document SAVE mode writes. Read by SKILL.md Save Mode Step 4. Produce all 15 sections (§0 to §14) in order. **Empty sections retain the header with `(none)` as the body**: this tells the receiving LLM the topic was considered, not forgotten.
+The document SAVE writes (SKILL.md Step 4). Produce all 15 sections (§0 to §14) in order. **An empty section keeps its header with `(none)` as the body**: the topic was considered, not forgotten.
 
-**Lean mode:** keep every section header, but replace any body that would duplicate the project's memory with a one-line pointer to the canonical entry (e.g. "see `editor-invariants.md`"). Always spell out the TRANSIENT sections (§1 METADATA, §3b current slice, §3d recent exchange, §4 STATE including its watchers and collaborating sessions, §5 PRIORITIES, §6 this-session DECISIONS, §8 this-session DEAD ENDS, §9 OPEN QUESTIONS, §14 NEXT ACTIONS); compress the DURABLE sections (§2 ORIENTATION except its LANGUAGE line, §7 CONSTRAINTS except its PROCEDURE lines, §10/§11/§12 where they restate memory) to pointers. §13 READ FIRST is always the pointer list to the canonical memory entries, plus its WORKING SET spelled out.
-
----
+**Lean mode:** keep every header; a body that would duplicate the project's memory becomes a one-line pointer to the canonical entry (e.g. "see `editor-invariants.md`"). Always spell out the TRANSIENT sections (§1 METADATA, §3b current slice, §3d recent exchange, §4 STATE including its watchers and collaborating sessions, §5 PRIORITIES, §6 this-session DECISIONS, §8 this-session DEAD ENDS, §9 OPEN QUESTIONS, §14 NEXT ACTIONS); compress the DURABLE sections (§2 ORIENTATION except its LANGUAGE line, §7 CONSTRAINTS except its PROCEDURE lines, §10/§11/§12 where they restate memory) to pointers. §13 READ FIRST is always the pointer list to the canonical memory entries, plus its WORKING SET spelled out.
 
 ## §0 PROTOCOL — embed verbatim
 
@@ -15,107 +13,92 @@ Insert exactly this text as section §0:
 
 You are an AI agent receiving a session handoff. Before taking any action:
 
-1. Read this entire document end-to-end.
-2. Open and read every file listed under §13 READ FIRST in the order given.
-3. Check for drift since this handoff was written: compare the current git branch,
-   HEAD, upstream ahead/behind, stash and working-tree status against §4 STATE,
-   re-run the re-check command of every §4 External state item, and compare
-   §1 METADATA `written_at` with the current time. Note every difference; do not
-   try to reconcile it yet.
-4. Mentally confirm you can answer:
-   - What is the user's current objective?
-   - What is the immediate top priority (§5 PRIORITY 1)?
-   - What constraints and procedures must you honour (§7)?
-   - What dead ends must you not retry (§8)?
-   - Which watchers and collaborating sessions are yours now (§4)?
+1. Read this entire document.
+2. Read every file under §13 READ FIRST, in order.
+3. Drift check: compare the current git branch, HEAD, upstream ahead/behind,
+   stash and working tree with §4 STATE; re-run every §4 External state RECHECK;
+   compare §1 `written_at` with the current time. Note each difference; do not
+   reconcile it yet.
+4. Make sure you can answer: the user's objective; §5 PRIORITY 1; the constraints
+   and procedures to honour (§7); the dead ends not to retry (§8); the watchers
+   and collaborating sessions now yours (§4).
 5. Pickup report. If this handoff reached you in a message from the source
    session and you can message other agent sessions, reply to that sender now,
-   before asking the user anything, with one line in the agent-to-agent language
-   (§2 LANGUAGE):
+   before asking the user anything, in one line in the §2 agent-to-agent language:
    PICKUP <file name> | P1: <§5 PRIORITY 1 in your own words> | lang: <user-facing language from §2> | drift: <none | summary>
-   The keywords PICKUP, MATCH, MISMATCH, DEFERRED, CONFIRMED and the field labels stay
-   literal in every language; only the free text is translated. Wait for the
-   source's answer before step 7. MATCH needs no reply. MISMATCH carries the
-   correct values: use them. If no answer comes (the source is unreachable, or
-   the user writes first), continue with step 7 and say the check is pending; if
-   a MISMATCH arrives after you already asked the user, send the corrected
+   The keywords PICKUP, MATCH, MISMATCH, DEFERRED, CONFIRMED and the field labels
+   stay literal in every language. Wait for the answer before step 7: MATCH needs
+   no reply; MISMATCH carries the correct values: use them. If none comes (source
+   unreachable, or the user writes first), continue with step 7 and say the check
+   is pending; if a MISMATCH arrives after you asked the user, send the corrected
    summary and ask again.
-6. If this document is unclear, incomplete, or silent on something you need, find
+6. If this document is unclear, incomplete or silent on something you need, find
    out before guessing, in this order:
-   a. Ask the source session if it is still running and you can message it (the
-      sender of the message that delivered this handoff, or §1 `session_name`).
-      It still holds the full context; its answer reflects its current state.
-   b. Read the source transcript: §1 METADATA `transcript_path` (JSON Lines; the
-      user's own messages are entries with "type":"user" whose message content is
-      a string or text blocks; §12 has a ready-made extraction command). It is the
-      authority for the user's exact words. Entries after §1 `transcript_anchor`
-      were written after this document. In Claude Code the source session can
-      also be reopened with `claude --resume <session_id>` from §1 `cwd`. The
-      transcript is deleted after the tool's retention period.
+   a. Ask the source session, if it is running and you can message it (the sender
+      of the delivering message, or §1 `session_name`): it holds the full context.
+   b. Read the source transcript (§1 `transcript_path`, JSON Lines; §12 has the
+      command for the user's messages). It is the authority for the user's exact
+      words; entries after §1 `transcript_anchor` came after this document. In
+      Claude Code the session can also be reopened with
+      `claude --resume <session_id>` from §1 `cwd`. Transcripts expire after the
+      tool's retention period.
    c. Ask the user.
-   Use these to look things up, not as a replacement for this document.
-7. Write every message to the user in the user-facing language from §2 LANGUAGE,
-   including one-line progress notes and replies that follow English tool or agent
-   output. Your first message summarizes, in your own words: the objective, §5
-   PRIORITY 1, the drift found in step 3, the watchers you would take over, and
-   asks the user two things together, before you proceed:
+   These are for lookups, not a replacement for this document.
+7. Write every message to the user in the §2 user-facing language, including
+   one-line progress notes and replies after English tool or agent output. Your
+   first message summarizes in your own words the objective, §5 PRIORITY 1, the
+   step 3 drift and the watchers you would take over, and asks two things
+   together before you proceed:
    a. Take over? (options: take over, not yet; the free-text answer carries any
       change.)
-   b. When to delete this handoff file (§1 METADATA `file_path`) and its
-      `assets_dir`, if that is not "none"? (options: when this work is done, now,
-      keep.) Recommend "when this work is done": until then the file is what you
-      re-read after your own context is compacted (step 12). If §1 METADATA
-      `sensitive_items` is non-empty, mention the sensitive items count and
-      recommend against keep, so the user understands the leakage motivation.
-   If you have the `AskUserQuestion` tool, ask both in one call and repeat that
-   summary, shortened, in the first question, since the user may see only the
-   questions. Otherwise ask in plain text. After "not yet", the answer to b does
-   not apply: ask both again when the user is ready. If this handoff was
-   delivered by message, also send the source one line: DEFERRED <file name>.
-   The source keeps the work, its watchers and its collaborating sessions until
-   you send CONFIRMED.
-8. Do NOT take any non-readonly action until the user confirms. Do not start a §4
-   watcher the source session may still be running until the source confirms it
-   has stopped it, or the source is unreachable and the user agrees. The source's
+   b. When to delete this file (§1 `file_path`) and its `assets_dir`, if not
+      "none"? (options: when this work is done, now, keep.) Recommend "when this
+      work is done": until then you re-read the file after your own compaction
+      (step 12). If §1 `sensitive_items` is non-empty, give their count and
+      recommend against keep, to limit leakage.
+   If you have the `AskUserQuestion` tool, ask both in one call, with the summary
+   repeated, shortened, in the first question: the user may see only the
+   questions. Otherwise ask in plain text. After "not yet", answer b does not
+   apply: ask both again when the user is ready, and if this handoff came by
+   message, send the source one line: DEFERRED <file name>. The source keeps the
+   work, its watchers and its collaborating sessions until you send CONFIRMED.
+8. Do NOT take any action that changes anything until the user confirms. Do not
+   start a §4 watcher the source may still run until the source confirms it
+   stopped it, or the source is unreachable and the user agrees. The source's
    stop message carries each watcher's final cursor (resume from it, not from §4)
-   and the watcher events it handled after writing this document: treat those as
-   part of this handoff. After starting the watchers, record in `MONITORS.md` that
-   this session now runs them and from which cursor. If §1 `delivered_to` names a session other
-   than you, that session may already own this work: ask the user before taking
+   and the watcher events it handled after writing this document: they are part
+   of this handoff. After starting the watchers, record in `MONITORS.md` that
+   this session runs them and from which cursor. If §1 `delivered_to` names
+   another session, it may already own this work: ask the user before taking
    over its watchers or collaborating sessions.
-9. After the user confirms, if this handoff was delivered by message, send the
-   source one line: CONFIRMED <file name>. The source then redirects the sessions
-   in §4 COLLABORATING SESSIONS to you and stops its watchers. If this handoff was
-   not delivered by message, or the source is unreachable, tell those sessions
-   yourself, one line each: what you now own and what to send you, including any
-   messages they queued while the source was handing off (§4 OPEN); if you cannot
-   message other sessions, list them for the user instead.
-10. If the user took over and chose "now" in step 7: once the source has reported
-    its watchers stopped (or is unreachable, or there were none), delete the file
-    and its `assets_dir`. With "when this work is done", delete them at the time
-    step 12 names. Before deleting, move anything in `assets_dir` that is
-    still needed (scripts a watcher runs, reusable probes) to a durable location
-    and update any reference to it.
+9. After the user confirms, if this handoff came by message, send the source one
+   line: CONFIRMED <file name>; it then redirects the §4 COLLABORATING SESSIONS
+   to you and stops its watchers. Otherwise, or if the source is unreachable,
+   tell those sessions yourself, one line each: what you now own and what to send
+   you, including messages they queued during the hand-over (§4 OPEN); if you
+   cannot message other sessions, list them for the user.
+10. If the user took over and chose "now": once the source reports its watchers
+    stopped (or is unreachable, or there were none), delete the file and its
+    `assets_dir`; with "when this work is done", at the time step 12 names. First
+    move anything in `assets_dir` still needed (scripts a watcher runs, reusable
+    probes) to a durable location and update references to it.
 11. If the user took over and you can message other agent sessions, end your
-    report to the user with this session's own name, as those tools report it,
-    in a command the user can copy (in Claude Code: /rename <name>). Only the
-    user can run it; a message from another session cannot rename this one.
-12. Compaction anchor. If the user took over and did not choose "now" in step 7,
-    and your tool reloads a persistent store into your context after it compacts
-    the conversation (in Claude Code: the project's auto memory index,
-    MEMORY.md), add one entry there before you end your report to the user:
-    Active handoff for session <your session ID, else your session name>:
-    <§1 file_path>. After a context compaction in that session, re-read its
-    §5, §7 and §14 before acting. Other sessions ignore this entry.
-    In Claude Code, write it as a memory entry named active-handoff-<§1 topic>
-    in the memory format your instructions give, and make its MEMORY.md index
-    line carry the whole instruction on its own (your session ID, the file
-    path, re-read §5, §7 and §14 after compaction): after a compaction only the
-    index is sure to be reloaded. The work
-    is done when §14 is complete, when the user says so, or when a new handoff
-    you write supersedes this one: then remove the entry, and with "when this
-    work is done" delete the file and its `assets_dir` (step 10). Without such a
-    store, skip this step.
+    report with this session's own name, as those tools report it, in a command
+    the user can copy (in Claude Code: /rename <name>). Only the user can run it.
+12. Compaction anchor. If the user took over without choosing "now", and your
+    tool reloads a persistent store into context after compacting (in Claude
+    Code: the project's auto memory index, MEMORY.md), add one entry there before
+    ending your report: Active handoff for session <your session ID, else your
+    session name>: <§1 file_path>. After a context compaction in that session,
+    re-read its §5, §7 and §14 before acting. Other sessions ignore this entry.
+    In Claude Code, make it a memory entry named active-handoff-<§1 topic>, in
+    the memory format your instructions give, whose MEMORY.md index line alone
+    carries the whole instruction (session ID, file path, re-read §5, §7 and §14
+    after compaction): after a compaction only the index is sure to be reloaded.
+    The work is done when §14 is complete, when the user says so, or when a new
+    handoff you write supersedes this one: then remove the entry, and with "when
+    this work is done" delete the file and its `assets_dir` (step 10). Without
+    such a store, skip this step.
 ```
 
 ## §1 METADATA — YAML frontmatter or fenced block
@@ -142,29 +125,23 @@ sensitive_items:        # empty list [] if scan was clean
 
 ## §2 ORIENTATION
 
-User identity, language preference, environment. The receiving LLM may be told nothing else about who the user is. Start with this required line:
+User identity, language, environment: the receiving LLM may learn nothing else about the user. Start with this required line:
 
 ```
 LANGUAGE: user-facing = <language for every message to the user, including one-line progress notes>; agent-to-agent = <language for messages to other agents, if the user's rules set one, else "same as user-facing">
 ```
 
-Then include:
-
-- User name, role, location, timezone
-- OS, shell, common project root
-- Assumed cwd for next session
-
-Pull from the user profile (SKILL.md "User profile hints": what is already in your context, else `~/.claude/USER.md` if it exists) and from what the user said this session. Do not assume any particular identity file exists; omit fields you cannot determine. In lean mode, keep the LANGUAGE line plus anything that differs from the profile, and point to the profile for the rest.
+Then: user name, role, location, timezone; OS, shell, common project root; assumed cwd for the next session. Take them from the user profile (SKILL.md "User profile hints") and what the user said this session; omit what you cannot determine. In lean mode, keep the LANGUAGE line plus anything that differs from the profile, and point to the profile for the rest.
 
 ## §3 MISSION — four subsections
 
 **(a) Long-term mission**: what the larger project is for, why it exists, who it serves.
 
-**(b) Current session slice + recent intent**: what this session focused on, what user has been actively pushing on in the most recent hours / turns, success criteria for the immediate slice.
+**(b) Current session slice + recent intent**: what this session focused on, what the user pushed on in the latest turns, success criteria for this slice.
 
-**(c) Intentionally deferred from scope**: work explicitly excluded from this session, with reason. Distinct from "pending" or "dead end": this is "we know about it, we chose not to do it now."
+**(c) Intentionally deferred from scope**: work explicitly excluded from this session, with reason (not pending, not a dead end: known, and chosen not to do now).
 
-**(d) Recent exchange (verbatim)**: the last part of the conversation, copied, not summarized, because the latest turns are where a summary most often drifts. The user's last 5 messages before the one that asked for this handoff, oldest first, then that request, marked `(the handoff request)`, then what you wrote to the user between the previous of those messages and the request (your replies, including turns started by peer messages or task notifications), headed by its last timestamp. Each item is a block quote headed by its ISO 8601 timestamp, its text copied unchanged: the only cuts are a user message over 2,000 characters, cut at its end, and the reply, cut at its start, each marked `[truncated: transcript line <N>]`. Answers the user gave to choice questions count as messages. Leave out tool output and system-injected text. This subsection reflects the moment of writing: §5 and §14 stay the authority for what to do next.
+**(d) Recent exchange (verbatim)**: the end of the conversation, copied, not summarized (summaries drift most on the latest turns). The user's last 5 messages before the one that asked for this handoff, oldest first, then that request, marked `(the handoff request)`, then what you wrote to the user between the previous of those messages and the request (your replies, including turns started by peer messages or task notifications), headed by its last timestamp. Each item is a block quote headed by its ISO 8601 timestamp, its text copied unchanged: the only cuts are a user message over 2,000 characters, cut at its end, and the reply, cut at its start, each marked `[truncated: transcript line <N>]`. Answers the user gave to choice questions count as messages. Leave out tool output and system-injected text. This subsection reflects the moment of writing: §5 and §14 stay the authority for what to do next.
 
 ## §4 STATE
 
@@ -195,7 +172,7 @@ EXTERNAL: <item>
 
 **WATCHERS AND BACKGROUND WORK** (end with this session): monitors / watchers, polls, background shell commands, jobs scheduled inside the session, running sub-agents. `(none)` if there were none.
 
-Monitors / watchers / polls are defined in the project's `MONITORS.md` (SKILL.md Step 3 creates or updates it), so their definitions survive any number of handoffs. Each entry there carries:
+Monitors / watchers / polls are defined in the project's `MONITORS.md` (SKILL.md Step 3 creates or updates it), so the definitions outlive any handoff. Each entry there carries:
 
 ```
 WATCHER: <name>
@@ -217,7 +194,7 @@ WATCHER: <name, as in MONITORS.md>
 
 Background shell commands, scheduled jobs and sub-agents that are not monitors are listed here directly: what each was doing, its last known result, and how to restart it if still needed.
 
-**COLLABORATING SESSIONS**: other agent sessions this session worked with (sent messages to or received messages from). `(none)` if there were none. For each:
+**COLLABORATING SESSIONS**: other agent sessions this one messaged or heard from, or `(none)`. For each:
 
 ```
 PEER: <session name, as other sessions address it>
@@ -228,11 +205,11 @@ PEER: <session name, as other sessions address it>
 
 Session names can change; the receiving agent re-resolves them with its session list before sending.
 
-**Recent artifacts**: screenshots, probe captures, generated logs, scratch files, with absolute paths. Files that were in a session-specific temporary directory (e.g. the session scratchpad) are listed at their copied location under `assets_dir`. Anything not copied that lives in such a directory is marked `TRANSIENT (may be gone)`.
+**Recent artifacts**: screenshots, probe captures, generated logs, scratch files, with absolute paths. Files from a session-specific temporary directory (e.g. the session scratchpad) are listed at their copy under `assets_dir`; ones not copied are marked `TRANSIENT (may be gone)`.
 
 ## §5 PRIORITIES
 
-Top 1–3 priorities for the receiving agent, ordered. These name the goals; §14 holds the ordered steps, so do not restate the steps here. Format each as:
+Top 1–3 priorities for the receiving agent, ordered: the goals, not the steps (those are §14). Format each as:
 
 ```
 PRIORITY 1: <action>
@@ -269,7 +246,7 @@ INVARIANT: <property that must hold>
 PROCEDURE: <what the receiving agent must do without being asked, and when>
 ```
 
-Include: privacy rules, environment quirks, deployment safety rules, user-explicit DON'Ts, hidden invariants. `PROCEDURE:` lines carry the working mode the user set: update cadences ("update and publish the report after every result, and at the start of any work"), delegation mode, notification duties, how to iterate ("one exact edit, then one rebuild"). Write each one out in full, one line each, even in lean mode: a pointer alone is not acted on.
+Include: privacy rules, environment quirks, deployment safety rules, user-explicit DON'Ts, hidden invariants. `PROCEDURE:` lines carry the working mode the user set: update cadences ("update and publish the report after every result, and at the start of any work"), delegation mode, notification duties, how to iterate ("one exact edit, then one rebuild"). Write each out in full on its own line, even in lean mode: a pointer alone is not acted on.
 
 ## §8 DEAD ENDS — two subsections
 
@@ -316,7 +293,7 @@ Both prevent the next agent from repeating work.
 
 ## §12 QUICK COMMANDS
 
-Bash one-liners the receiving agent can copy-paste, inside one fenced code block. Format:
+Bash one-liners the receiving agent can copy-paste, in one fenced code block:
 
 ```
 # <purpose>
@@ -326,18 +303,13 @@ Bash one-liners the receiving agent can copy-paste, inside one fenced code block
 <command>
 ```
 
-Examples of what to include:
-- Run main check / test command
-- Tail relevant logs
-- Common SSH invocation
-- Restart relevant service
-- Reset state for re-test
+For example: the main check / test command, tailing relevant logs, a common SSH invocation, restarting a service, resetting state for a re-test.
 
-When `transcript_path` is known, always include this lookup (substitute the real path; plain `grep -n` on the same file searches everything else):
+When `transcript_path` is known, always include this lookup (substitute the real paths: the skill directory is the one holding this template and `transcript.jq`; plain `grep -n` on the same file searches everything else):
 
 ```
-# Source session: the user's own messages, slash commands and choice answers, in order (needs jq)
-jq -c 'select(.type=="user" and (.isCompactSummary|not) and (.isMeta|not)) | {line: input_line_number, ts: .timestamp} + (if (.toolUseResult|type)=="object" and (.toolUseResult.answers|type)=="object" then {kind: "choice", text: (.toolUseResult.answers | to_entries | map("Q: \(.key[0:80]) A: \(.value)") | join("\n"))} else {kind: "message", text: (.message.content | if type=="string" then . else (map(select(.type=="text") | .text) | join("\n")) end)} end) | select(.text | length > 0) | select((.text | startswith("<") | not) or (.text | startswith("<command-"))) | if (.text | startswith("<command-")) then .text = ([(.text | capture("<command-name>(?<n>[^<]*)</command-name>").n), (.text | capture("<command-args>(?<a>[^<]*)</command-args>").a)] | map(select(. != null and . != "")) | join(" ")) else . end' <transcript_path>
+# Source session: the user's own messages, slash commands and choice answers, in order (needs jq; if the skill directory has moved, grep the transcript)
+jq -c -L <absolute path of the handoff skill directory> 'include "transcript"; user_messages' <transcript_path>
 ```
 
 All paths in commands must be absolute.
@@ -363,7 +335,7 @@ WORKING SET: <absolute path>[:<start>-<end> when only that range matters]
 
 ## §14 NEXT ACTIONS
 
-Concrete ordered steps. Include every task-list item from this session that is not completed (pending or in progress), merged into the order, with its status. Format:
+Concrete ordered steps, including every task-list item not completed (pending or in progress), with its status. Format:
 
 ```
 STEP 1: <action>
@@ -377,18 +349,16 @@ STEP 2: <action>
   IF FAILS: <...>
 ```
 
----
-
 ## LLM-facing format rules — apply to all content
 
 | Rule | Detail |
 |---|---|
-| Paths | Absolute only in the generated document. Expand `~` to the real home path (e.g. `/home/you/.claude/...` or `/Users/you/.claude/...`); never leave a literal `~/` in the doc. |
+| Paths | Absolute only. Expand `~` to the real home path (e.g. `/home/you/.claude/...` or `/Users/you/.claude/...`); never a literal `~/`. |
 | Timestamps | ISO 8601 with TZ. E.g. `2026-05-11T14:30:52+08:00`. Never "May 11" / "2pm" / "yesterday". |
-| Empty sections | Keep section header, body = `(none)`. Don't omit the section. |
+| Empty sections | Header kept, body `(none)`. |
 | User quotes | Verbatim where decisions came from user. No paraphrase. Mark with `SOURCE: <quote>` or block-quote. |
-| Structured markers | Use `DECISION:`, `CONSTRAINT:`, `DO NOT:`, `INVARIANT:`, `PRIORITY <n>:`, `STEP <n>:`, etc., to enable easy LLM extraction. |
+| Structured markers | `DECISION:`, `CONSTRAINT:`, `DO NOT:`, `INVARIANT:`, `PRIORITY <n>:`, `STEP <n>:`, etc. |
 | Abbreviations | Expand on first use. No assumed jargon. |
 | Decoration | No emoji. No nested tables. No HTML. Vanilla markdown only. |
-| Tool / framework references | Generic terms. "Open the file" not "use the Read tool". Receiving LLM may not be Claude. |
-| Standalone-ness | Self-contained mode: spell everything out; the doc must not rely on conversation history, auto-loaded memory, or implicit context. Lean mode: the doc MAY rely on the project's auto-loaded / relevance-injected memory, which it MUST list in §13 READ FIRST, but it must still stand alone for all TRANSIENT state. In both modes the source transcript is a fallback for lookups, never a substitute for writing the state down. |
+| Tool / framework references | Generic terms: "open the file", not "use the Read tool"; the receiver may not be Claude. |
+| Standalone-ness | Self-contained mode: rely on no conversation history, memory or implicit context. Lean mode: MAY rely on the project's auto-loaded memory, listed in §13 READ FIRST, but stands alone for all TRANSIENT state. In both, the source transcript is a fallback for lookups, never a substitute for writing the state down. |

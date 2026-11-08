@@ -56,7 +56,7 @@ A 15-section document built for machine extraction, not human reading: `§0 PROT
 
 ### Source session and pickup checks
 
-The handoff records the ID and transcript path of the session that wrote it. When the document leaves something unclear, the receiving agent looks it up in that transcript, or reopens the session with `claude --resume <id>`, until Claude Code's transcript retention period removes it. If the session was compacted before saving, the save step reads the earlier messages back from the transcript first.
+The handoff records the ID and transcript path of the session that wrote it. When the document leaves something unclear, the receiving agent looks it up in that transcript, or reopens the session with `claude --resume <id>`, until Claude Code's transcript retention period removes it. If the session was compacted before saving, however many times, the save step first reads back from the transcript all of your messages and everything before the last compaction (your messages, the agent's replies and messages from other sessions, without tool output). A long transcript is split into parts that subagents read with a fixed list of what to report: your instructions and authorizations quoted verbatim, decisions and rejected alternatives, constraints and agreements, dead ends, open commitments and identifiers, each marked when a later message revoked it.
 
 On load, before its first message, the receiving agent compares the current git branch, HEAD, upstream and working tree with the recorded state, re-checks recorded external state (pull requests, deploys) with the commands the handoff lists, and reports any drift. Files that lived only in the session's temporary scratch space are copied next to the handoff.
 

@@ -5,6 +5,8 @@ Public Claude Code plugin: one model-invoked skill, `handoff`, that saves a sess
 ## Layout
 - `skills/handoff/SKILL.md` — the skill procedure, and the deliverable. Two modes: SAVE (bundle decisions / state / dead ends / constraints / next steps into one file; with `to NAME` / `new`, also hold the collaborating sessions' messages while it runs, send it to a running session and run the PICKUP / MATCH / DEFERRED / CONFIRMED check) and LOAD (autodiscover, present, consume, or load a given path directly; then follow the file's embedded §0 PROTOCOL).
 - `skills/handoff/template.md` — the handoff document spec (§0 PROTOCOL text, §1–§14, format rules); SAVE reads it via `${CLAUDE_SKILL_DIR}`.
+- `skills/handoff/transcript.jq` — jq module with the transcript filters (`user_messages`, `cut_text`, `last_replies`, `view`); SKILL.md Step 3 and template §12 call it with `jq -L <skill dir> 'include "transcript"; …'`. The only copy of the filters: change them here.
+- Keep SKILL.md at or under 500 lines (Claude Code skills guideline) by tightening wording first; split procedures into sibling files only as a last resort (an agent can skip a file it is pointed to), one level deep from SKILL.md.
 - `.claude-plugin/plugin.json` — plugin manifest.
 - `.claude-plugin/marketplace.json` — self-marketplace (`source: "./"`) so the repo is directly installable.
 - `setup.sh` — symlink installer (recommended path): links the skill into `~/.claude/skills/` for the short `/handoff` name, repo stays source of truth. Idempotent; `--dry-run` / `--force`. The plugin manager is the alternative (namespaced `/handoff:handoff`, discoverable). Use one, not both.

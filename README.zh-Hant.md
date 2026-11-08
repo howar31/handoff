@@ -56,7 +56,7 @@
 
 ### 來源 session 與接手檢查
 
-交接文件記錄寫出它的 session ID 與對話紀錄路徑。文件有不清楚的地方時，接手的 agent 會去查那份對話紀錄，或用 `claude --resume <id>` 重新開啟那個 session；對話紀錄超過 Claude Code 的保留期限後就無法使用。如果 session 在存檔前被 compact 過，存檔時會先從對話紀錄讀回較早的訊息。
+交接文件記錄寫出它的 session ID 與對話紀錄路徑。文件有不清楚的地方時，接手的 agent 會去查那份對話紀錄，或用 `claude --resume <id>` 重新開啟那個 session；對話紀錄超過 Claude Code 的保留期限後就無法使用。如果 session 在存檔前被 compact 過，不論幾次，存檔時都會先從對話紀錄讀回你的所有訊息，以及最後一次 compact 之前的全部內容（你的訊息、agent 的回覆、其他 session 的訊息，不含工具輸出）。對話紀錄很長時會分段交給 subagent 閱讀，每段依固定清單回報：你的指示與授權（引用原文）、決策與被否決的方案、限制與協議、走不通的路、尚未完成的承諾，以及各種識別碼；後來被撤回的項目會標出來。
 
 讀檔時，接手的 agent 在第一則訊息之前，會比對目前的 git branch、HEAD、upstream 與工作目錄跟文件記錄的狀態，用文件列出的指令重新檢查外部狀態（pull request、部署），並回報差異。只存在於該 session 暫存空間的檔案會複製到交接文件旁邊。
 
