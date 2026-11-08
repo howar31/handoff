@@ -154,7 +154,7 @@ A line number means this session was compacted, the last time at that line. Ever
 jq -c -L "${CLAUDE_SKILL_DIR}" 'include "transcript"; user_messages | cut_text' "$TRANSCRIPT" | tail -n 6
 ```
 
-Your replies between the user's previous message and the latest one, including turns started by peer messages or task notifications: the last one's timestamp and transcript line, then their text joined, keeping the last 2,000 characters:
+Your latest replies before the request: what you wrote after the last earlier user message that got a reply (normally the previous one; with two user messages in a row, the one before), including turns started by peer messages or task notifications: the last reply's timestamp and transcript line, then the text joined, keeping the last 2,000 characters:
 
 ```bash
 jq -n -r -L "${CLAUDE_SKILL_DIR}" 'include "transcript"; last_replies' "$TRANSCRIPT"

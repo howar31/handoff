@@ -30,8 +30,10 @@ def user_messages:
 # Cut a user_messages object to 2,000 characters and mark the cut.
 def cut_text: if (.text | length) > 2000 then .text = .text[0:2000] + " [truncated: transcript line \(.line)]" else . end;
 
-# Run with -n. The agent's text between the user's previous message and the latest one:
-# the last reply's timestamp and line, then the text joined, keeping the last 2,000 characters.
+# Run with -n. The agent's latest replies before the user's latest message: the text after
+# the last earlier user message that got a reply (normally the previous one), so two user
+# messages in a row still yield the replies before them. Prints the last reply's timestamp
+# and line, then the text joined, keeping the last 2,000 characters.
 def last_replies:
   reduce (inputs | input_line_number as $l
           | select(.type == "assistant" or _human_queued
@@ -39,7 +41,8 @@ def last_replies:
           | {e: ., l: $l}) as $x
     ({cur: [], last: []};
      if $x.e.type == "assistant" then .cur += [$x.e.message.content[]? | select(.type == "text") | {ts: $x.e.timestamp, line: $x.l, text: .text}]
-     else .last = .cur | .cur = [] end)
+     elif (.cur | length) > 0 then .last = .cur | .cur = []
+     else . end)
   | .last
   | if length == 0 then empty
     else (map(.text) | join("\n")) as $r
