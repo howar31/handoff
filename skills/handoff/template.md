@@ -84,7 +84,9 @@ You are an AI agent receiving a session handoff. Before taking any action:
     probes) to a durable location and update references to it.
 11. If the user took over and you can message other agent sessions, end your
     report with this session's own name, as those tools report it, in a command
-    the user can copy (in Claude Code: /rename <name>). Only the user can run it.
+    the user can copy (in Claude Code: /rename <name>); if another listed
+    session has the same name, say so and propose a name no listed session
+    uses instead. Only the user can run it.
 12. Compaction anchor. If the user took over without choosing "now", and your
     tool reloads a persistent store into context after compacting (in Claude
     Code: the project's auto memory index, MEMORY.md), add one entry there before
@@ -203,7 +205,7 @@ PEER: <session name, as other sessions address it>
   OPEN: <requests pending in either direction, messages awaiting a reply, or "none">
 ```
 
-Session names can change; the receiving agent re-resolves them with its session list before sending.
+Session names can change, and two sessions can share one (then write `name [ref]` as the listing shows it). The receiving agent re-resolves each name with its session list before sending; when a name is gone or a send fails, it sends to the receiver or new owner that session named (its last messages, the tool's suggestion), updates this list, and never drops a message silently.
 
 **Recent artifacts**: screenshots, probe captures, generated logs, scratch files, with absolute paths. Files from a session-specific temporary directory (e.g. the session scratchpad) are listed at their copy under `assets_dir`; ones not copied are marked `TRANSIENT (may be gone)`.
 

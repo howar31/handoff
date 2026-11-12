@@ -50,6 +50,36 @@ def last_replies:
       + (if ($r | length) > 2000 then "[truncated: transcript line \(.[0].line)] " + $r[-2000:] else $r end)
     end;
 
+# Run with -n. Every agent session this one messaged or heard from, however long ago:
+# one object per peer, most recent first, with the socket address when one was seen,
+# message counts each way and the last exchange. Outgoing names are kept as written
+# (a "name [ref]" form marks a name two sessions shared); an outgoing socket address is
+# mapped to the name its incoming messages carried. Subagent IDs (bare hex) are left out.
+def peers:
+  [inputs
+   | .timestamp as $ts
+   | if .type == "assistant" then
+       .message.content[]? | select(.type == "tool_use" and .name == "SendMessage")
+       | (.input.to | tostring) as $to
+       | select($to | test("^[0-9a-f]{16,}$") | not)
+       | {dir: "sent", to: $to, ts: $ts}
+     elif .type == "user" or .type == "attachment" then
+       ((.message.content // .attachment.prompt // "") | _text)
+       | capture("<cross-session-message from=\"(?<from>[^\"]*)\"(?: from-name=\"(?<name>[^\"]*)\")?"; "g")
+       | {dir: "received", from: .from, name: .name, ts: $ts}
+     else empty end] as $e
+  | ($e | map(select(.dir == "received" and .name != null) | {(.from): .name}) | add // {}) as $names
+  | $e
+  | map(. + {peer: (if .dir == "sent" then ($names[.to] // .to) else (.name // .from) end),
+             address: (if .dir == "received" then .from elif (.to | startswith("uds:")) then .to else null end)})
+  | group_by(.peer)
+  | map({peer: .[0].peer,
+         address: (map(.address | select(. != null)) | last),
+         sent: map(select(.dir == "sent")) | length,
+         received: map(select(.dir == "received")) | length,
+         last: (map(.ts) | max)})
+  | sort_by(.last) | reverse | .[];
+
 # One line per entry before transcript line $before: user (U), agent text (A) and
 # messages from other sessions (P); tool calls and tool output are left out.
 def view($before):
