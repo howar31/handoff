@@ -28,10 +28,11 @@ You are an AI agent receiving a session handoff. Before taking any action:
    PICKUP <file name> | P1: <§5 PRIORITY 1 in your own words> | lang: <user-facing language from §2> | drift: <none | summary>
    The keywords PICKUP, MATCH, MISMATCH, DEFERRED, CONFIRMED and the field labels
    stay literal in every language. Wait for the answer before step 7: MATCH needs
-   no reply; MISMATCH carries the correct values: use them. If none comes (source
-   unreachable, or the user writes first), continue with step 7 and say the check
-   is pending; if a MISMATCH arrives after you asked the user, send the corrected
-   summary and ask again.
+   no reply; MISMATCH carries the correct values: use them; apply any other note
+   in it, then go to step 7. If none comes (source unreachable, or the user
+   writes first), continue with step 7 and say the check is pending; if a
+   MISMATCH arrives after you asked the user, send the corrected summary and ask
+   again.
 6. If this document is unclear, incomplete or silent on something you need, find
    out before guessing, in this order:
    a. Ask the source session, if it is running and you can message it (the sender
@@ -47,8 +48,13 @@ You are an AI agent receiving a session handoff. Before taking any action:
 7. Write every message to the user in the §2 user-facing language, including
    one-line progress notes and replies after English tool or agent output. Your
    first message summarizes in your own words the objective, §5 PRIORITY 1, the
-   step 3 drift and the watchers you would take over, and asks two things
-   together before you proceed:
+   step 3 drift and the watchers you would take over, then asks two things
+   together before you proceed. If you have the `AskUserQuestion` tool, the two
+   questions go in one call to it, never in the text: write the summary as text,
+   then make the call, with the summary repeated, shortened, in the first
+   question (the user may see only the questions). Only without that tool, ask
+   in plain text. This holds whenever you ask them, also in the turn a MATCH or
+   MISMATCH (step 5) starts.
    a. Take over? (options: take over, not yet; the free-text answer carries any
       change.)
    b. When to delete this file (§1 `file_path`) and its `assets_dir`, if not
@@ -56,12 +62,10 @@ You are an AI agent receiving a session handoff. Before taking any action:
       work is done": until then you re-read the file after your own compaction
       (step 12). If §1 `sensitive_items` is non-empty, give their count and
       recommend against keep, to limit leakage.
-   If you have the `AskUserQuestion` tool, ask both in one call, with the summary
-   repeated, shortened, in the first question: the user may see only the
-   questions. Otherwise ask in plain text. After "not yet", answer b does not
-   apply: ask both again when the user is ready, and if this handoff came by
-   message, send the source one line: DEFERRED <file name>. The source keeps the
-   work, its watchers and its collaborating sessions until you send CONFIRMED.
+   After "not yet", answer b does not apply: ask both again when the user is
+   ready, and if this handoff came by message, send the source one line:
+   DEFERRED <file name>. The source keeps the work, its watchers and its
+   collaborating sessions until you send CONFIRMED.
 8. Do NOT take any action that changes anything until the user confirms. Do not
    start a §4 watcher the source may still run until the source confirms it
    stopped it, or the source is unreachable and the user agrees. The source's

@@ -281,7 +281,7 @@ Needs the messaging tools ("Messaging other sessions"); without them, report tha
    ```
 
    Tell the user: sent to `<name>`, waiting for its PICKUP line. Send each held peer one line: the receiver is `<name>`; keep holding.
-3. **Check the PICKUP line.** Compare `P1` with §5 PRIORITY 1 and `lang` with the §2 user-facing language. Reply `MATCH`, or `MISMATCH:` with each correct value; these keywords and PICKUP / CONFIRMED stay literal in every language. Tell the user: the receiver has read the handoff and waits for their confirmation in `<name>`.
+3. **Check the PICKUP line.** Compare `P1` with §5 PRIORITY 1 and `lang` with the §2 user-facing language. Reply `MATCH`, or `MISMATCH:` with each correct value, then any other note (e.g. a fix made in the file), and end the reply with this line: `Now ask the user §0 step 7's two questions, in the form step 7 gives.` These keywords and PICKUP / CONFIRMED stay literal in every language. Tell the user: the receiver has read the handoff and waits for their confirmation in `<name>`.
 4. **Idle notice before PICKUP**: the receiver most likely waits for its user; tell the user to check `<name>`. An idle notice after PICKUP needs no action.
 5. **Answer the receiver's questions** from this session's context until CONFIRMED.
 6. **On `DEFERRED`** (the user answered "not yet" in the receiver): this session still owns the work. Release the peer hold, keep the watchers running, tell the user. If the user later confirms there, the receiver sends CONFIRMED and step 7 runs as usual.
