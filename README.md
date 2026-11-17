@@ -40,15 +40,21 @@ Both modes are model-invocable: natural-language requests such as "create a hand
 
 ### Hand over to a running session
 
-In Claude Code, sessions on the same machine can message each other. Open a new session for the work, then run `/handoff new` (or `/handoff to <session>`) in the old one. Before writing, the old session asks the sessions it works with to queue their messages for it until the hand-over ends, and to send only what cannot wait. If the hand-over has not ended after 60 minutes, a session checks whether the old session still answers, then the receiver; it tells you only when neither does. After writing the file, it:
+In Claude Code, sessions on the same machine can message each other. Open a new session for the work, then run `/handoff new` (or `/handoff to <session>`) in the old one. Before writing (on every save, with or without a hand-over), the old session asks the sessions it works with to queue their messages for it until the hand-over ends, and to send only what cannot wait. If the hand-over has not ended after 60 minutes, a session checks whether the old session still answers, then the receiver; it tells you only when neither does. After writing the file, it:
 
 1. Picks the receiver: the named session, or for `new` the one idle session of this project that started after the old one. It asks you only when there are several candidates or none.
-2. Sends it a message that points to the file. The receiver loads it and, before asking you anything, replies with one `PICKUP` line: the top priority in its own words, the language it will use with you, and any drift.
+2. Sends it a message that points to the file. The receiver loads it and, before asking you anything, replies with one `PICKUP` line: the top priority and the first step in its own words, the language it will use with you, and any drift.
 3. Checks that line against the file and answers `MATCH` or the correct values, then tells you the receiver is waiting for your confirmation. If the receiver goes idle without replying, it tells you to check that session.
 4. Answers the receiver's questions from its own context until you confirm in the receiver, which then sends `CONFIRMED`. If you answer "not yet" there, the receiver sends `DEFERRED`: the old session keeps the work and its watchers, and the other sessions send to it again.
 5. Tells the sessions it worked with to address the receiver from now on and to send it what they queued, stops its own watchers, sends the receiver their last-seen positions and what arrived after the file was written, and reports that it can be closed.
 
-Without `to` or `new`, or in an agent without cross-session messaging, `/handoff` only writes the file and you load it yourself.
+### Park the work and resume later or in place
+
+Without `to` or `new`, or in an agent without cross-session messaging, `/handoff` writes the file and parks the work: it stops the session's watchers, background commands, scheduled jobs and subagents, writes their last-seen positions into the file, and tells the sessions it worked with that the next owner will contact them; they keep queuing until then. You load the file yourself, in a new session or in the same one.
+
+In Claude Code, `/clear` empties the context but does not stop background work: a command still running reports into the cleared context, which knows nothing about it. Parking stops that work first. To continue in the same session, run `/clear`, then `/handoff load <path>`; the save report prints this line. The session keeps its name after `/clear`, so the receiving agent does not ask itself as the source session.
+
+Saving uses context too: run `/handoff` before the context is close to full, so the save is not interrupted by an automatic compaction.
 
 ### What's in a handoff
 
@@ -57,6 +63,8 @@ A 15-section document built for machine extraction, not human reading: `§0 PROT
 ### Source session and pickup checks
 
 The handoff records the ID and transcript path of the session that wrote it. When the document leaves something unclear, the receiving agent looks it up in that transcript, or reopens the session with `claude --resume <id>`, until Claude Code's transcript retention period removes it. If the session was compacted before saving, however many times, the save step first reads back from the transcript all of your messages and everything before the last compaction (your messages, the agent's replies and messages from other sessions, without tool output). A long transcript is split into parts that subagents read with a fixed list of what to report: your instructions and authorizations quoted verbatim, decisions and rejected alternatives, constraints and agreements, dead ends, open commitments and identifiers, each marked when a later message revoked it.
+
+Before the privacy scan, the draft is checked as the receiver would read it: a subagent compares it with every message you sent in the session, and with a handoff the session itself took over, and reports instructions, preferences, goals, approvals and points you stressed that the draft leaves out or changes, plus the questions it would have to ask before the first step. The agent fills the gaps with targeted edits. Rules you set are quoted verbatim and marked when you stressed them (repeated them, corrected the agent, or used words such as "must" or "never"); approvals are recorded with their scope and how long they hold. When the session took over an earlier handoff, that handoff's rules, approvals and open items carry over, read back from the transcript if the file was already deleted.
 
 On load, before its first message, the receiving agent compares the current git branch, HEAD, upstream and working tree with the recorded state, re-checks recorded external state (pull requests, deploys) with the commands the handoff lists, and reports any drift. Files that lived only in the session's temporary scratch space are copied next to the handoff.
 
@@ -68,7 +76,7 @@ The last part of the conversation is copied verbatim rather than summarized: you
 
 Once the receiving session's context is compacted, what it read from the handoff survives only in the compaction summary. In Claude Code, after you confirm pickup, the receiver adds an `active-handoff-<topic>` entry to the project's auto memory, which Claude Code reloads after compaction. The entry names the handoff file and tells that session to re-read the priorities, constraints and next actions after a compaction; other sessions ignore it. The entry is removed when the work is done, when you say so, or when that session writes a new handoff.
 
-Monitors are defined in a `MONITORS.md` file in the project (kept out of git): target, cadence, restart command, where it stores its read position, and what it reports. The save step creates or updates it, so the definitions carry over any number of handoffs, and the handoff itself records only which monitors continue and their read positions. During a hand-over the old session keeps its monitors running until the receiver is confirmed, then stops them and sends the receiver the final read positions plus the events it handled after writing the file; the receiver resumes from those positions.
+Monitors are defined in a `MONITORS.md` file in the project (kept out of git): target, cadence, restart command, where it stores its read position, and what it reports. The save step creates or updates it, so the definitions carry over any number of handoffs, and the handoff itself records only which monitors continue and their read positions. Without a hand-over, the save step stops them right after writing and records their final read positions in the file. During a hand-over the old session keeps its monitors running until the receiver is confirmed, then stops them and sends the receiver the final read positions plus the events it handled after writing the file; the receiver resumes from those positions.
 
 ### Privacy
 
@@ -85,11 +93,14 @@ If your profile is available, either in Claude Code's context (for example impor
 ## Architecture
 
 ```
-/handoff        -->  gather session state; triage durable vs transient
-                     (lean mode promotes durable facts into memory);
-                     privacy scan; write the document
-  to <s> | new  -->  first ask peers to queue their messages;
-                     message the receiver; check its PICKUP line;
+/handoff        -->  ask peers to queue their messages; gather session
+                     state; triage durable vs transient (lean mode
+                     promotes durable facts into memory); check the
+                     draft against your messages; privacy scan; write
+                     the document
+  no hand-over  -->  park: stop background work, record final positions,
+                     tell peers the next owner will contact them
+  to <s> | new  -->  message the receiver; check its PICKUP line;
                      on CONFIRMED redirect peers and stop watchers
 
 /handoff load   -->  find this project's handoffs and confirm the choice,
@@ -183,11 +194,11 @@ Install only one method: `setup.sh` and `npx skills` both write `~/.claude/skill
 
 ## What you'll see
 
-After `/handoff`, Claude reports the written file path, the assets directory (or `none`), the topic, the project, the source session ID, and how many sections were filled. It does not print the document back.
+After `/handoff`, Claude reports the written file path, the assets directory (or `none`), the topic, the project, the source session ID, how many sections were filled, what it stopped when parking, and the command to resume in the same session after `/clear`. It does not print the document back.
 
 After `/handoff to <session>` or `/handoff new`, Claude also reports each hand-over stage: sent, picked up and waiting for your confirmation in the receiver, and complete.
 
-After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then summarizes, in the language the handoff records for you, the objective, the top priority, any drift since the handoff and the watchers it would take over, and asks you to confirm, along with when to delete the handoff. It takes no write action until you confirm. In Claude Code, after you confirm, it ends with `/rename <name>` carrying its own session name, for you to run; if another running session has the same name, it proposes a different one.
+After `/handoff load` and your choice, the receiving agent reads the file and the files it lists under §13, then summarizes, in the language the handoff records for you, the objective, the top priority, any drift since the handoff, the watchers it would take over, the rules you stressed and the approvals still in force, and asks you to confirm, along with when to delete the handoff. It takes no write action until you confirm. In Claude Code, after you confirm, it ends with `/rename <name>` carrying its own session name, for you to run; if another running session has the same name, it proposes a different one.
 
 ## Backup
 

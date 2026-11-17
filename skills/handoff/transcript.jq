@@ -7,8 +7,9 @@ def _text: if type == "string" then . elif type == "array" then (map(select(.typ
 # A message the user typed while the agent was working: recorded as an attachment, not a user entry.
 def _human_queued: .type == "attachment" and .attachment.type == "queued_command" and ((.attachment.origin | tostring) | test("\"kind\":\"human\""));
 
-# System-injected text starts with "<"; slash commands keep their <command-...> wrapper here.
-def _own: length > 0 and ((startswith("<") | not) or startswith("<command-"));
+# System-injected text starts with "<" (slash commands keep their <command-...> wrapper here);
+# the harness records an interrupt as a user entry starting "[Request interrupted by user".
+def _own: length > 0 and ((startswith("<") | not) or startswith("<command-")) and (startswith("[Request interrupted by user") | not);
 
 def _render: if startswith("<command-") then ([(capture("<command-name>(?<n>[^<]*)</command-name>").n), (capture("<command-args>(?<a>[^<]*)</command-args>").a)] | map(select(. != null and . != "")) | join(" ")) else . end;
 
@@ -79,6 +80,26 @@ def peers:
          received: map(select(.dir == "received")) | length,
          last: (map(.ts) | max)})
   | sort_by(.last) | reverse | .[];
+
+# Run with -n. Each read of a handoff document (a file-read tool call on a path under
+# /cache/handoff/), with that path, as the tool returned it (often with line numbers): a
+# document deleted after pickup is still here. A file read in parts yields one object per part.
+def handoff_reads:
+  foreach (inputs | {l: input_line_number, e: .}) as $x
+    ({ids: {}, out: []};
+     .out = []
+     | if $x.e.type == "assistant" then
+         .ids += ([$x.e.message.content[]?
+                   | select(type == "object" and .type == "tool_use" and .name == "Read")
+                   | select((.input.file_path // "") | test("/cache/handoff/[^/]+\\.md$"))
+                   | {(.id): .input.file_path}] | add // {})
+       elif $x.e.type == "user" then
+         .ids as $ids
+         | .out = [$x.e.message.content[]?
+                   | select(type == "object" and .type == "tool_result" and $ids[.tool_use_id] != null)
+                   | {line: $x.l, ts: $x.e.timestamp, path: $ids[.tool_use_id], text: (.content | _text)}]
+       else . end;
+     .out[]);
 
 # One line per entry before transcript line $before: user (U), agent text (A) and
 # messages from other sessions (P); tool calls and tool output are left out.

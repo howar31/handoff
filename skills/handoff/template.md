@@ -2,7 +2,7 @@
 
 The document SAVE writes (SKILL.md Step 4). Produce all 15 sections (§0 to §14) in order. **An empty section keeps its header with `(none)` as the body**: the topic was considered, not forgotten.
 
-**Lean mode:** keep every header; a body that would duplicate the project's memory becomes a one-line pointer to the canonical entry (e.g. "see `editor-invariants.md`"). Always spell out the TRANSIENT sections (§1 METADATA, §3b current slice, §3d recent exchange, §4 STATE including its watchers and collaborating sessions, §5 PRIORITIES, §6 this-session DECISIONS, §8 this-session DEAD ENDS, §9 OPEN QUESTIONS, §14 NEXT ACTIONS); compress the DURABLE sections (§2 ORIENTATION except its LANGUAGE line, §7 CONSTRAINTS except its PROCEDURE lines, §10/§11/§12 where they restate memory) to pointers. §13 READ FIRST is always the pointer list to the canonical memory entries, plus its WORKING SET spelled out.
+**Lean mode:** keep every header; a body that would duplicate the project's memory becomes a one-line pointer to the canonical entry (e.g. "see `editor-invariants.md`"). Always spell out the TRANSIENT sections (§1 METADATA, §3b current slice, §3d recent exchange, §4 STATE including its watchers and collaborating sessions, §5 PRIORITIES, §6 this-session DECISIONS, §8 this-session DEAD ENDS, §9 OPEN QUESTIONS, §14 NEXT ACTIONS); compress the DURABLE sections (§2 ORIENTATION except its LANGUAGE line, §7 CONSTRAINTS except its PROCEDURE, AUTHORIZED and (stressed) lines, §10/§11/§12 where they restate memory) to pointers. §13 READ FIRST is always the pointer list to the canonical memory entries, plus its WORKING SET spelled out.
 
 ## §0 PROTOCOL — embed verbatim
 
@@ -14,7 +14,9 @@ Insert exactly this text as section §0:
 You are an AI agent receiving a session handoff. Before taking any action:
 
 1. Read this entire document.
-2. Read every file under §13 READ FIRST, in order.
+2. Read every file under §13 READ FIRST, in order, except one already in your
+   context (e.g. loaded automatically at session start). Read each WORKING SET
+   file when a §14 step acts on it, only the range given.
 3. Drift check: compare the current git branch, HEAD, upstream ahead/behind,
    stash and working tree with §4 STATE; re-run every §4 External state RECHECK;
    compare §1 `written_at` with the current time. Note each difference; do not
@@ -25,7 +27,7 @@ You are an AI agent receiving a session handoff. Before taking any action:
 5. Pickup report. If this handoff reached you in a message from the source
    session and you can message other agent sessions, reply to that sender now,
    before asking the user anything, in one line in the §2 agent-to-agent language:
-   PICKUP <file name> | P1: <§5 PRIORITY 1 in your own words> | lang: <user-facing language from §2> | drift: <none | summary>
+   PICKUP <file name> | P1: <§5 PRIORITY 1 in your own words> | S1: <§14 STEP 1 in your own words> | lang: <user-facing language from §2> | drift: <none | summary>
    The keywords PICKUP, MATCH, MISMATCH, DEFERRED, CONFIRMED and the field labels
    stay literal in every language. Wait for the answer before step 7: MATCH needs
    no reply; MISMATCH carries the correct values: use them; apply any other note
@@ -37,6 +39,8 @@ You are an AI agent receiving a session handoff. Before taking any action:
    out before guessing, in this order:
    a. Ask the source session, if it is running and you can message it (the sender
       of the delivering message, or §1 `session_name`): it holds the full context.
+      Skip this when that name is your own: a session whose context was cleared
+      in place keeps its name, and you are that session with only this file.
    b. Read the source transcript (§1 `transcript_path`, JSON Lines; §12 has the
       command for the user's messages). It is the authority for the user's exact
       words; entries after §1 `transcript_anchor` came after this document. In
@@ -48,10 +52,13 @@ You are an AI agent receiving a session handoff. Before taking any action:
 7. Write every message to the user in the §2 user-facing language, including
    one-line progress notes and replies after English tool or agent output. Your
    first message summarizes in your own words the objective, §5 PRIORITY 1, the
-   step 3 drift and the watchers you would take over, then asks two things
-   together before you proceed. If you have the `AskUserQuestion` tool, the two
-   questions go in one call to it, never in the text: write the summary as text,
-   then make the call, with the summary repeated, shortened, in the first
+   step 3 drift, the watchers you would take over, the §6 decisions (one line
+   of their titles), the rules marked (stressed) and the §7 AUTHORIZED lines
+   still in force (name any whose UNTIL has passed: they do not carry over),
+   then asks two things together before you proceed. The summary is reply text
+   the user sees, not only your reasoning. If you have the `AskUserQuestion`
+   tool, the two questions go in one call to it, never in the text: write the
+   summary as reply text, then make the call, with the summary repeated, shortened, in the first
    question (the user may see only the questions). Only without that tool, ask
    in plain text. This holds whenever you ask them, also in the turn a MATCH or
    MISMATCH (step 5) starts.
@@ -68,10 +75,11 @@ You are an AI agent receiving a session handoff. Before taking any action:
    collaborating sessions until you send CONFIRMED.
 8. Do NOT take any action that changes anything until the user confirms. Do not
    start a §4 watcher the source may still run until the source confirms it
-   stopped it, or the source is unreachable and the user agrees. The source's
-   stop message carries each watcher's final cursor (resume from it, not from §4)
-   and the watcher events it handled after writing this document: they are part
-   of this handoff. After starting the watchers, record in `MONITORS.md` that
+   stopped it, §1 `watchers_stopped` gives the time it stopped them, or the
+   source is unreachable and the user agrees. With `watchers_stopped`, §4 CURSOR
+   is the final cursor; otherwise the source's stop message carries each final
+   cursor (resume from it, not from §4) and the watcher events it handled after
+   writing this document: they are part of this handoff. After starting the watchers, record in `MONITORS.md` that
    this session runs them and from which cursor. If §1 `delivered_to` names
    another session, it may already own this work: ask the user before taking
    over its watchers or collaborating sessions.
@@ -86,7 +94,8 @@ You are an AI agent receiving a session handoff. Before taking any action:
     `assets_dir`; with "when this work is done", at the time step 12 names. First
     move anything in `assets_dir` still needed (scripts a watcher runs, reusable
     probes) to a durable location and update references to it.
-11. If the user took over and you can message other agent sessions, end your
+11. If the user took over, you can message other agent sessions and §1
+    `session_name` is not your own name (an in-place pickup keeps it), end your
     report with this session's own name, as those tools report it, in a command
     the user can copy (in Claude Code: /rename <name>); if another listed
     session has the same name, say so and propose a name no listed session
@@ -119,6 +128,7 @@ generated_by_model: <e.g., the model id of the agent writing this>
 session_id: <ID of the session that wrote this handoff, or "unknown">
 session_name: <the name other sessions use to message the writing session, or "unknown">
 delivered_to: <name of the session this handoff was sent to, or "none">
+watchers_stopped: <ISO 8601 time the source stopped its watchers and background work and wrote their final cursors into §4, or "no">
 transcript_path: <absolute path of that session's transcript (JSONL), or "unknown">
 transcript_anchor: <"line <N>, uuid <uuid>": the transcript's line count and its last entry uuid when this file was written, or "unknown">
 compacted: <true if the source session was compacted before this save, else false>
@@ -164,7 +174,7 @@ State plainly that uncommitted, unpushed and stashed work exists only on this ma
 
 **System state**:
 - Deployed? to where? what version?
-- Processes running (relevant ones)
+- Processes running (relevant ones), each with how to restart it
 - Secrets / tokens rotated this session? what's the state?
 - Migrations applied?
 
@@ -250,9 +260,14 @@ CONSTRAINT: <rule>
 DO NOT: <action>
 INVARIANT: <property that must hold>
 PROCEDURE: <what the receiving agent must do without being asked, and when>
+AUTHORIZED: <what the user allowed the agent to do>
+  SCOPE: <its limits>
+  UNTIL: <ISO 8601 time, an event (e.g. "until the PR merges"), or "this work">
 ```
 
-Include: privacy rules, environment quirks, deployment safety rules, user-explicit DON'Ts, hidden invariants. `PROCEDURE:` lines carry the working mode the user set: update cadences ("update and publish the report after every result, and at the start of any work"), delegation mode, notification duties, how to iterate ("one exact edit, then one rebuild"). Write each out in full on its own line, even in lean mode: a pointer alone is not acted on.
+A rule or authorization from the user carries its verbatim quote on the next line, `SOURCE: "<quote>"`, followed by ` (stressed)` when the user stressed it: said it more than once, corrected the agent about it, or used words such as must, never, always.
+
+Include: privacy rules, environment quirks, deployment safety rules, user-explicit DON'Ts, hidden invariants. `PROCEDURE:` lines carry the working mode the user set: update cadences ("update and publish the report after every result, and at the start of any work"), delegation mode, notification duties, how to iterate ("one exact edit, then one rebuild"). Write each out in full on its own line, even in lean mode: a pointer alone is not acted on. The same holds for `AUTHORIZED:` lines: every approval the user gave that is still in force, with how long it holds; an approval whose duration the user did not state holds for "this work".
 
 ## §8 DEAD ENDS — two subsections
 
